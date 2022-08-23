@@ -1,6 +1,7 @@
 package redpacket
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -97,7 +98,11 @@ func (contract *aptosRedPacketContract) SendTransaction(account base.Account, rp
 	if err != nil {
 		return "", err
 	}
-	return contract.chain.SubmitTransactionPayload(account, payload, newProcessMaxGasTxOption(rpa))
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+	return contract.chain.SubmitTransactionPayload(account, data)
 }
 
 func (contract *aptosRedPacketContract) createPayload(rpa *RedPacketAction) (*aptostypes.Payload, error) {
@@ -213,37 +218,4 @@ func toBaseTransaction(transaction *aptostypes.Transaction) (*base.TransactionDe
 	detail.FinishTimestamp = int64(timestamp)
 
 	return detail, nil
-}
-
-type transactionOption struct {
-	rpa *RedPacketAction
-}
-
-func newProcessMaxGasTxOption(rpa *RedPacketAction) aptos.TransactionOption {
-	return &transactionOption{rpa: rpa}
-}
-
-func (o *transactionOption) Process(tx *aptostypes.Transaction) (*aptostypes.Transaction, error) {
-	tx.MaxGasAmount = o.estimateGas()
-	return tx, nil
-}
-
-func (o *transactionOption) estimateGas() uint64 {
-	if o.rpa.Method != RPAMethodOpen {
-		return MaxGasAmount
-	}
-	// devnet 测试结果
-	// OpenPacketCount  |  GasUsed
-	// 10 | 19
-	// 100 | 249
-	// 200 | 483
-	// 500 | 1158
-	// 1000 | 2355
-	if len(o.rpa.OpenParams.Addresses) > 200 {
-		return 2000
-	} else if len(o.rpa.OpenParams.Addresses) > 500 {
-		return 3000
-	} else {
-		return MaxGasAmount
-	}
 }
