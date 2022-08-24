@@ -13,15 +13,18 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-    // 创建合约对象，以及想要执行的 action
-	contract := redpacket.NewAptosRedPacketContract(chain, os.Getenv("red_packet"))
+	
+	// 创建合约对象，以及想要执行的 action
+	contract, err := redpacket.NewRedPacketContract(redpacket.ChainTypeAptos, chain, os.Getenv("red_packet"))
+	if err != nil {
+		panic(err)
+	}
 	action, err := redpacket.NewRedPacketActionCreate("", 5, "100000")
 	if err != nil {
 		panic(err)
 	}
 
-    // 使用合约对象发送 action 交易到链上
+	// 使用合约对象发送 action 交易到链上
 	txHash, err := contract.SendTransaction(account, action)
 	if err != nil {
 		panic(err)
@@ -33,6 +36,7 @@ func main() {
 	println(txHash)
 	println(txDetail.Status)
 }
+
 ```
 
 eth 创建红包示例：

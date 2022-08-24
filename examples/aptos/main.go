@@ -18,7 +18,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	contract := redpacket.NewAptosRedPacketContract(chain, os.Getenv("red_packet"))
+	contract, err := redpacket.NewRedPacketContract(redpacket.ChainTypeAptos, chain, os.Getenv("red_packet"))
+	if err != nil {
+		panic(err)
+	}
 	action, err := redpacket.NewRedPacketActionCreate("", 5, "100000")
 	if err != nil {
 		panic(err)
