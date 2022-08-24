@@ -52,6 +52,7 @@ func (contract *ethRedPacketContract) FetchRedPacketCreationDetail(hash string) 
 	return &RedPacketDetail{
 		TransactionDetail: detail.TransactionDetail,
 		AmountName:        detail.AmountName,
+		RedPacketAmount:   detail.RedPacketAmount,
 		AmountDecimal:     detail.AmountDecimal,
 	}, nil
 }
@@ -130,7 +131,7 @@ func (contract *ethRedPacketContract) fetchRedPacketCreationDetail(hash string) 
 	if err != nil {
 		return nil, err
 	}
-	redDetail := &RedPacketDetail{detail, "", 0}
+	redDetail := &RedPacketDetail{detail, "", 0, ""}
 	if data := msg.Data(); len(data) > 0 {
 		method, params, err_ := eth.DecodeContractParams(RedPacketABI, data)
 		if err_ != nil {
@@ -149,6 +150,7 @@ func (contract *ethRedPacketContract) fetchRedPacketCreationDetail(hash string) 
 
 			redDetail.EstimateFees = feeInt.String()
 			redDetail.Amount = params[2].(*big.Int).String()
+			redDetail.RedPacketAmount = redDetail.Amount
 			erc20Address := params[0].(common.Address).String()
 			redDetail.AmountName, _ = chain.TokenName(erc20Address)
 			redDetail.AmountDecimal, _ = chain.TokenDecimal(erc20Address)

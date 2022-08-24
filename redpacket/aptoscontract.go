@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/coming-chat/go-aptos/aptostypes"
 	"github.com/coming-chat/wallet-SDK/core/aptos"
@@ -27,7 +28,10 @@ type aptosRedPacketContract struct {
 }
 
 func NewAptosRedPacketContract(chain aptos.IChain, contractAddress string) RedPacketContract {
-	return &aptosRedPacketContract{chain: chain, address: contractAddress}
+	return &aptosRedPacketContract{
+		chain:   chain,
+		address: "0x" + strings.TrimPrefix(contractAddress, "0x"),
+	}
 }
 
 func (contract *aptosRedPacketContract) EstimateFee(rpa *RedPacketAction) (string, error) {
@@ -84,10 +88,41 @@ func (contract *aptosRedPacketContract) FetchRedPacketCreationDetail(hash string
 		return nil, fmt.Errorf("invalid payload arguments, len %d", len(transaction.Payload.Arguments))
 	}
 	baseTransaction.Amount = transaction.Payload.Arguments[1].(string)
+
+	redPacketAmount := ""
+
+	for _, event := range transaction.Events {
+		if event.Type != contract.address+"::red_packet::RedPacketEvent" {
+			continue
+		}
+		eventData, ok := event.Data.(map[string]interface{})
+		if !ok {
+			return nil, errors.New("redpacket event data is not map[string]interface{}")
+		}
+		eventType, ok := eventData["event_type"].(float64)
+		if !ok {
+			return nil, errors.New("redpacket data eventType is not float64")
+		}
+		// 0 是 create event
+		if int(eventType) != 0 {
+			return nil, errors.New("not create event")
+		}
+		redPacketAmount, ok = eventData["remain_balance"].(string)
+		if !ok {
+			return nil, errors.New("redpacket data remain_balance is not string")
+		}
+		break
+	}
+
+	if redPacketAmount == "" {
+		return nil, errors.New("not found redpacket amount")
+	}
+
 	redPacketDetail := &RedPacketDetail{
 		TransactionDetail: baseTransaction,
 		AmountName:        AptosName,
 		AmountDecimal:     AptosDecimal,
+		RedPacketAmount:   redPacketAmount,
 	}
 
 	return redPacketDetail, nil
