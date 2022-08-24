@@ -82,7 +82,8 @@ func (contract *aptosRedPacketContract) getFeePoint() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	feePoint, _ := resource.Data["fee_point"].(float64)
+	config, _ := resource.Data["config"].(map[string]interface{})
+	feePoint, _ := config["fee_point"].(float64)
 	return uint64(feePoint), nil
 }
 
