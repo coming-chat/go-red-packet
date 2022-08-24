@@ -55,6 +55,22 @@ func (contract *aptosRedPacketContract) EstimateFee(rpa *RedPacketAction) (strin
 	}
 }
 
+func (contract *aptosRedPacketContract) EstimateGasFee(acocunt base.Account, rpa *RedPacketAction) (string, error) {
+	payload, err := contract.createPayload(rpa)
+	if err != nil {
+		return "", err
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+	gasFee, err := contract.chain.EstimatePayloadGasFee(acocunt, data)
+	if err != nil {
+		return "", err
+	}
+	return gasFee.Value, nil
+}
+
 // getFeePoint get fee_point from contract by resouce
 // when api support call move public function, should not use resouce
 func (contract *aptosRedPacketContract) getFeePoint() (uint64, error) {

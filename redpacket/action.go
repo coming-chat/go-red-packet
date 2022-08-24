@@ -17,7 +17,8 @@ const (
 type RedPacketContract interface {
 	SendTransaction(base.Account, *RedPacketAction) (string, error)
 	FetchRedPacketCreationDetail(hash string) (*RedPacketDetail, error)
-	EstimateFee(*RedPacketAction) (string, error) // create red packet fee
+	EstimateFee(*RedPacketAction) (string, error)                  // create red packet fee
+	EstimateGasFee(base.Account, *RedPacketAction) (string, error) // gas fee = gasPrice * gasLimit
 }
 
 type RedPacketAction struct {

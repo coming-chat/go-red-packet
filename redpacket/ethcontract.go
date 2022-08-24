@@ -44,6 +44,56 @@ func (contract *ethRedPacketContract) EstimateFee(rpa *RedPacketAction) (string,
 	}
 }
 
+func (contract *ethRedPacketContract) EstimateGasFee(account base.Account, rpa *RedPacketAction) (string, error) {
+	params, err := contract.packParams(rpa)
+	if err != nil {
+		return "", err
+	}
+	data, err := eth.EncodeContractData(RedPacketABI, rpa.Method, params...)
+	if err != nil {
+		return "", err
+	}
+
+	ethChain, err := contract.chain.GetEthChain()
+	if err != nil {
+		return "", err
+	}
+
+	price, err := ethChain.SuggestGasPrice()
+	if err != nil {
+		return "", err
+	}
+
+	value, err := contract.EstimateFee(rpa)
+	if err != nil {
+		return "", err
+	}
+
+	msg := eth.NewCallMsg()
+	msg.SetFrom(account.Address())
+	msg.SetTo(contract.address)
+	msg.SetGasPrice(price)
+	msg.SetData(data)
+	msg.SetValue(value)
+
+	gasLimit, err := contract.chain.EstimateGasLimit(msg)
+	if err != nil {
+		gasLimit = &base.OptionalString{Value: "200000"}
+		err = nil
+	}
+
+	priceInt, ok := big.NewInt(0).SetString(price, 10)
+	if !ok {
+		return "", errors.New("invalid gas price")
+	}
+	limitInt, ok := big.NewInt(0).SetString(gasLimit.Value, 10)
+	if !ok {
+		return "", errors.New("invalid gas limit")
+	}
+
+	return priceInt.Mul(priceInt, limitInt).String(), nil
+}
+
 func (contract *ethRedPacketContract) FetchRedPacketCreationDetail(hash string) (*RedPacketDetail, error) {
 	detail, err := contract.fetchRedPacketCreationDetail(hash)
 	if err != nil {
