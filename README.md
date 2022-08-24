@@ -1,8 +1,15 @@
 # go-red-packet
 
+- [go-red-packet](#go-red-packet)
+	- [创建红包](#创建红包)
+	- [红包费用](#红包费用)
+
 A client for red packet contract.
 
 此项目只提供与 redpacket 合约交互的交易与方法封装，不提供发送交易。项目使用 [coming-chat/wallet-sdk](https://github.com/coming-chat/wallet-SDK) 实现发送交易。
+
+
+## 创建红包
 
 aptos 创建红包示例：
 ```go
@@ -68,3 +75,14 @@ func main() {
 }
 
 ```
+
+## 红包费用
+
+发红包的费用分为两部分
+1. gas fee
+2. 合约服务费
+   1. eth 红包合约收取的是链原声币作为服务费
+   2. aptos 红包合约收取的是当前代币作为服务费（目前仅支持原生币红包）
+
+`RedPacketContract` 接口方法 `EstimateFee(*RedPacketAction) (string, error)` 获取合约服务费。
+方法 `EstimateGasFee(base.Account, *RedPacketAction) (string, error)` 获取 gas fee （gasLimit * gasPrice）。
