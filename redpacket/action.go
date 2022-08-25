@@ -50,6 +50,7 @@ type RedPacketDetail struct {
 	AmountName      string
 	AmountDecimal   int16
 	RedPacketAmount string // 最后加入到红包里的 Amount，也即用户能够抢的那部分的 Amount
+	ChainName       string
 }
 
 // 用户发红包 的操作

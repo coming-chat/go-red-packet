@@ -181,7 +181,7 @@ func (contract *ethRedPacketContract) fetchRedPacketCreationDetail(hash string) 
 	if err != nil {
 		return nil, err
 	}
-	redDetail := &RedPacketDetail{detail, "", 0, ""}
+	redDetail := &RedPacketDetail{detail, "", 0, "", ""}
 	if data := msg.Data(); len(data) > 0 {
 		method, params, err_ := eth.DecodeContractParams(RedPacketABI, data)
 		if err_ != nil {
