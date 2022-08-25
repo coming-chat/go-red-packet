@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	AptosName    = "Aptos"
-	AptosSymbol  = "Aptos"
-	AptosDecimal = 0
+	AptosName    = aptos.AptosName
+	AptosSymbol  = aptos.AptosSymbol
+	AptosDecimal = aptos.AptosDecimal
 
 	MaxGasAmount = 1000
 	GasPrice     = 1
