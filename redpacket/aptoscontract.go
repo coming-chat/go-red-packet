@@ -106,7 +106,7 @@ func (contract *aptosRedPacketContract) FetchRedPacketCreationDetail(hash string
 	}
 	baseTransaction.Amount = transaction.Payload.Arguments[1].(string)
 
-	redPacketAmount := ""
+	redPacketAmount := "0"
 
 	for _, event := range transaction.Events {
 		if event.Type != contract.address+"::red_packet::RedPacketEvent" {
@@ -129,10 +129,6 @@ func (contract *aptosRedPacketContract) FetchRedPacketCreationDetail(hash string
 			return nil, errors.New("redpacket data remain_balance is not string")
 		}
 		break
-	}
-
-	if redPacketAmount == "" {
-		return nil, errors.New("not found redpacket amount")
 	}
 
 	redPacketDetail := &RedPacketDetail{
