@@ -30,7 +30,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	txDetail, err := chain.FetchTransactionDetail(txHash)
+	txDetail, err := contract.FetchRedPacketCreationDetail(txHash)
 	if err != nil {
 		panic(err)
 	}

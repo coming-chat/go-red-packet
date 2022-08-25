@@ -251,9 +251,10 @@ func toBaseTransaction(transaction *aptostypes.Transaction) (*base.TransactionDe
 
 	args := transaction.Payload.Arguments
 	if len(args) >= 2 {
-		detail.ToAddress = args[0].(string)
 		detail.Amount = args[1].(string)
 	}
+
+	detail.ToAddress = strings.Split(transaction.Payload.Function, "::")[0]
 
 	if transaction.Success {
 		detail.Status = base.TransactionStatusSuccess
