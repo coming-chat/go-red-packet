@@ -97,7 +97,7 @@ func (contract *ethRedPacketContract) EstimateGasFee(account base.Account, rpa *
 func (contract *ethRedPacketContract) FetchRedPacketCreationDetail(hash string) (*RedPacketDetail, error) {
 	detail, err := contract.fetchRedPacketCreationDetail(hash)
 	if err != nil {
-		return nil, err
+		return detail, err
 	}
 	return &RedPacketDetail{
 		TransactionDetail: detail.TransactionDetail,
@@ -185,7 +185,7 @@ func (contract *ethRedPacketContract) fetchRedPacketCreationDetail(hash string) 
 	if data := msg.Data(); len(data) > 0 {
 		method, params, err_ := eth.DecodeContractParams(RedPacketABI, data)
 		if err_ != nil {
-			return nil, newRedPacketDataError(err_.Error())
+			return redDetail, newRedPacketDataError(err_.Error())
 		}
 		if method == RPAMethodCreate {
 			feeInt, ok := big.NewInt(0).SetString(detail.EstimateFees, 10)

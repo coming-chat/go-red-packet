@@ -105,8 +105,14 @@ func (contract *aptosRedPacketContract) FetchRedPacketCreationDetail(hash string
 		return nil, newRedPacketDataError(err.Error())
 	}
 
+	redPacketDetail := &RedPacketDetail{
+		TransactionDetail: baseTransaction,
+		AmountName:        AptosName,
+		AmountDecimal:     AptosDecimal,
+	}
+
 	if len(transaction.Payload.Arguments) < 2 {
-		return nil, newRedPacketDataError(fmt.Sprintf("invalid payload arguments, len %d", len(transaction.Payload.Arguments)))
+		return redPacketDetail, newRedPacketDataError(fmt.Sprintf("invalid payload arguments, len %d", len(transaction.Payload.Arguments)))
 	}
 	baseTransaction.Amount = transaction.Payload.Arguments[1].(string)
 
@@ -118,30 +124,24 @@ func (contract *aptosRedPacketContract) FetchRedPacketCreationDetail(hash string
 		}
 		eventData, ok := event.Data.(map[string]interface{})
 		if !ok {
-			return nil, newRedPacketDataError("redpacket event data is not map[string]interface{}")
+			return redPacketDetail, newRedPacketDataError("redpacket event data is not map[string]interface{}")
 		}
 		eventType, ok := eventData["event_type"].(float64)
 		if !ok {
-			return nil, newRedPacketDataError("redpacket data eventType is not float64")
+			return redPacketDetail, newRedPacketDataError("redpacket data eventType is not float64")
 		}
 		// 0 是 create event
 		if int(eventType) != 0 {
-			return nil, newRedPacketDataError("not create event")
+			return redPacketDetail, newRedPacketDataError("not create event")
 		}
 		redPacketAmount, ok = eventData["remain_balance"].(string)
 		if !ok {
-			return nil, newRedPacketDataError("redpacket data remain_balance is not string")
+			return redPacketDetail, newRedPacketDataError("redpacket data remain_balance is not string")
 		}
 		break
 	}
 
-	redPacketDetail := &RedPacketDetail{
-		TransactionDetail: baseTransaction,
-		AmountName:        AptosName,
-		AmountDecimal:     AptosDecimal,
-		RedPacketAmount:   redPacketAmount,
-	}
-
+	redPacketDetail.RedPacketAmount = redPacketAmount
 	return redPacketDetail, nil
 }
 
