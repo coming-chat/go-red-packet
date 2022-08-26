@@ -3,6 +3,7 @@
 - [go-red-packet](#go-red-packet)
 	- [创建红包](#创建红包)
 	- [红包费用](#红包费用)
+	- [FetchRedPacketCreationDetail 的 error 返回](#fetchredpacketcreationdetail-的-error-返回)
 
 A client for red packet contract.
 
@@ -86,3 +87,16 @@ func main() {
 
 `RedPacketContract` 接口方法 `EstimateFee(*RedPacketAction) (string, error)` 获取合约服务费。
 方法 `EstimateGasFee(base.Account, *RedPacketAction) (string, error)` 获取 gas fee （gasLimit * gasPrice）。
+
+## FetchRedPacketCreationDetail 的 error 返回
+
+error 分为两类，一类是红包数据错误（包括 hash 对应的交易不存在）；一类是其他错误（网络错误等）
+```go
+_, err = contract.FetchRedPacketCreationDetail("0x1908acf431fde3cc31926860c342f18421669d087325defa19cfe42537738c21")
+switch e := err.(type) {
+case *redpacket.RedPacketDataError:
+	println(e.Error())
+default:
+	println("other error")
+}
+```

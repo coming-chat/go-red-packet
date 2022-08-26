@@ -94,15 +94,19 @@ func (contract *aptosRedPacketContract) FetchRedPacketCreationDetail(hash string
 	}
 	transaction, err := client.GetTransactionByHash(hash)
 	if err != nil {
+		var restError *aptostypes.RestError
+		if errors.As(err, &restError) {
+			return nil, newRedPacketDataError(restError.Message)
+		}
 		return nil, err
 	}
 	baseTransaction, err := toBaseTransaction(transaction)
 	if err != nil {
-		return nil, err
+		return nil, newRedPacketDataError(err.Error())
 	}
 
 	if len(transaction.Payload.Arguments) < 2 {
-		return nil, fmt.Errorf("invalid payload arguments, len %d", len(transaction.Payload.Arguments))
+		return nil, newRedPacketDataError(fmt.Sprintf("invalid payload arguments, len %d", len(transaction.Payload.Arguments)))
 	}
 	baseTransaction.Amount = transaction.Payload.Arguments[1].(string)
 
@@ -114,19 +118,19 @@ func (contract *aptosRedPacketContract) FetchRedPacketCreationDetail(hash string
 		}
 		eventData, ok := event.Data.(map[string]interface{})
 		if !ok {
-			return nil, errors.New("redpacket event data is not map[string]interface{}")
+			return nil, newRedPacketDataError("redpacket event data is not map[string]interface{}")
 		}
 		eventType, ok := eventData["event_type"].(float64)
 		if !ok {
-			return nil, errors.New("redpacket data eventType is not float64")
+			return nil, newRedPacketDataError("redpacket data eventType is not float64")
 		}
 		// 0 是 create event
 		if int(eventType) != 0 {
-			return nil, errors.New("not create event")
+			return nil, newRedPacketDataError("not create event")
 		}
 		redPacketAmount, ok = eventData["remain_balance"].(string)
 		if !ok {
-			return nil, errors.New("redpacket data remain_balance is not string")
+			return nil, newRedPacketDataError("redpacket data remain_balance is not string")
 		}
 		break
 	}
@@ -238,7 +242,7 @@ func calcTotal(amount uint64, feePoint uint64) uint64 {
 func toBaseTransaction(transaction *aptostypes.Transaction) (*base.TransactionDetail, error) {
 	if transaction.Type != aptostypes.TypeUserTransaction ||
 		transaction.Payload.Type != aptostypes.EntryFunctionPayload {
-		return nil, errors.New("invalid transfer transaction.")
+		return nil, errors.New("invalid transfer transaction")
 	}
 
 	detail := &base.TransactionDetail{

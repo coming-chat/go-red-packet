@@ -185,7 +185,7 @@ func (contract *ethRedPacketContract) fetchRedPacketCreationDetail(hash string) 
 	if data := msg.Data(); len(data) > 0 {
 		method, params, err_ := eth.DecodeContractParams(RedPacketABI, data)
 		if err_ != nil {
-			return nil, err_
+			return nil, newRedPacketDataError(err_.Error())
 		}
 		if method == RPAMethodCreate {
 			feeInt, ok := big.NewInt(0).SetString(detail.EstimateFees, 10)
