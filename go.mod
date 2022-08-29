@@ -3,13 +3,15 @@ module github.com/coming-chat/go-red-packet
 go 1.18
 
 require (
-	github.com/coming-chat/go-aptos v0.0.0-20220822070214-2773ac55a2e8
-	github.com/coming-chat/wallet-SDK v0.2.7-0.20220826015808-c56987ba4823
+	github.com/coming-chat/go-aptos v0.0.0-20220825104502-61728966084f
+	github.com/coming-chat/wallet-SDK v0.2.7-0.20220826031150-c523743d8ff6
 	github.com/ethereum/go-ethereum v1.10.18
 )
 
 require (
 	github.com/ChainSafe/go-schnorrkel v0.0.0-20210318173838-ccb5cd955283 // indirect
+	github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e // indirect
+	github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/btcsuite/btcd v0.22.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
@@ -34,6 +36,7 @@ require (
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
+	github.com/tyler-smith/go-bip32 v1.0.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/vedhavyas/go-subkey v1.0.2 // indirect
 	golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064 // indirect
