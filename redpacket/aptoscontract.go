@@ -1,6 +1,7 @@
 package redpacket
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/coming-chat/go-aptos/aptostypes"
+	transactionbuilder "github.com/coming-chat/go-aptos/transaction_builder"
 	"github.com/coming-chat/wallet-SDK/core/aptos"
 	"github.com/coming-chat/wallet-SDK/core/base"
 )
@@ -19,18 +21,35 @@ const (
 
 	MaxGasAmount = 1000
 	GasPrice     = 1
+
+	createABI = "0106637265617465b39c45e31d1429218aeb3590e2a046edae9303fbbc3ef6a065384569cfd818810a7265645f7061636b657400000205636f756e74020d746f74616c5f62616c616e636502"
+	openABI   = "01046f70656eb39c45e31d1429218aeb3590e2a046edae9303fbbc3ef6a065384569cfd818810a7265645f7061636b6574000003026964020e6c75636b795f6163636f756e747306040862616c616e6365730602"
+	closeABI  = "0105636c6f7365b39c45e31d1429218aeb3590e2a046edae9303fbbc3ef6a065384569cfd818810a7265645f7061636b657400000102696402"
 )
 
 // aptosRedPacketContract implement RedPacketContract interface
 type aptosRedPacketContract struct {
 	chain   aptos.IChain
 	address string
+	abi     *transactionbuilder.TransactionBuilderABI
 }
 
 func NewAptosRedPacketContract(chain aptos.IChain, contractAddress string) RedPacketContract {
+	abiBytes := make([][]byte, 0)
+	abiStrs := []string{createABI, openABI, closeABI}
+	for _, s := range abiStrs {
+		bs, _ := hex.DecodeString(s)
+		abiBytes = append(abiBytes, bs)
+	}
+	redpacketAbi, err := transactionbuilder.NewTransactionBuilderABI(abiBytes)
+	if err != nil {
+		return nil
+	}
+
 	return &aptosRedPacketContract{
 		chain:   chain,
 		address: "0x" + strings.TrimPrefix(contractAddress, "0x"),
+		abi:     redpacketAbi,
 	}
 }
 
