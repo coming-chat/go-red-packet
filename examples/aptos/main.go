@@ -26,6 +26,27 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	// action, err := redpacket.NewRedPacketActionOpen(565, []string{
+	// 	account.Address(),
+	// 	account.Address(),
+	// 	account.Address(),
+	// 	account.Address(),
+	// 	account.Address(),
+	// }, []string{
+	// 	"20000",
+	// 	"20000",
+	// 	"20000",
+	// 	"20000",
+	// 	"20000",
+	// })
+	if err != nil {
+		panic(err)
+	}
+	gasFee, err := contract.EstimateGasFee(account, action)
+	if err != nil {
+		panic(err)
+	}
+	println(gasFee)
 	txHash, err := contract.SendTransaction(account, action)
 	if err != nil {
 		panic(err)
