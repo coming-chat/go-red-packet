@@ -3,9 +3,9 @@ module github.com/coming-chat/go-red-packet
 go 1.18
 
 require (
-	github.com/coming-chat/go-aptos v0.0.0-20220906045107-3fb486fe66b5
+	github.com/coming-chat/go-aptos v0.0.0-20220906103625-f30b9ebd525a
 	github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf
-	github.com/coming-chat/wallet-SDK v0.2.7-0.20220906061454-a20af09bef80
+	github.com/coming-chat/wallet-SDK v0.2.7-0.20220907033135-88873019c958
 	github.com/ethereum/go-ethereum v1.10.18
 )
 
