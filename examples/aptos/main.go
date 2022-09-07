@@ -26,7 +26,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// action, err := redpacket.NewRedPacketActionOpen(565, []string{
+	// action, err := redpacket.NewRedPacketActionOpen(3, []string{
 	// 	account.Address(),
 	// 	account.Address(),
 	// 	account.Address(),
