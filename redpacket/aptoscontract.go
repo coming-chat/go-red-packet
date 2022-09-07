@@ -1,13 +1,15 @@
 package redpacket
 
 import (
-	"encoding/json"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/coming-chat/go-aptos/aptostypes"
+	txbuilder "github.com/coming-chat/go-aptos/transaction_builder"
+	"github.com/coming-chat/lcs"
 	"github.com/coming-chat/wallet-SDK/core/aptos"
 	"github.com/coming-chat/wallet-SDK/core/base"
 )
@@ -19,18 +21,36 @@ const (
 
 	MaxGasAmount = 1000
 	GasPrice     = 1
+
+	createABIFormat = "0106637265617465%s0a7265645f7061636b657400000205636f756e74020d746f74616c5f62616c616e636502"
+	openABIFormat   = "01046f70656e%s0a7265645f7061636b6574000003026964020e6c75636b795f6163636f756e747306040862616c616e6365730602"
+	closeABIFormat  = "0105636c6f7365%s0a7265645f7061636b657400000102696402"
 )
 
 // aptosRedPacketContract implement RedPacketContract interface
 type aptosRedPacketContract struct {
 	chain   aptos.IChain
 	address string
+	abi     *txbuilder.TransactionBuilderABI
 }
 
 func NewAptosRedPacketContract(chain aptos.IChain, contractAddress string) RedPacketContract {
+	contractAddressWithOurPrefix := strings.TrimPrefix(contractAddress, "0x")
+	abiBytes := make([][]byte, 0)
+	abiStrFormats := []string{createABIFormat, openABIFormat, closeABIFormat}
+	for _, s := range abiStrFormats {
+		bs, _ := hex.DecodeString(fmt.Sprintf(s, contractAddressWithOurPrefix))
+		abiBytes = append(abiBytes, bs)
+	}
+	redpacketAbi, err := txbuilder.NewTransactionBuilderABI(abiBytes)
+	if err != nil {
+		return nil
+	}
+
 	return &aptosRedPacketContract{
 		chain:   chain,
-		address: "0x" + strings.TrimPrefix(contractAddress, "0x"),
+		address: "0x" + contractAddressWithOurPrefix,
+		abi:     redpacketAbi,
 	}
 }
 
@@ -60,11 +80,11 @@ func (contract *aptosRedPacketContract) EstimateGasFee(acocunt base.Account, rpa
 	if err != nil {
 		return "", err
 	}
-	data, err := json.Marshal(payload)
+	data, err := lcs.Marshal(payload)
 	if err != nil {
 		return "", err
 	}
-	gasFee, err := contract.chain.EstimatePayloadGasFee(acocunt, data)
+	gasFee, err := contract.chain.EstimatePayloadGasFeeBCS(acocunt, data)
 	if err != nil {
 		return "", err
 	}
@@ -150,14 +170,14 @@ func (contract *aptosRedPacketContract) SendTransaction(account base.Account, rp
 	if err != nil {
 		return "", err
 	}
-	data, err := json.Marshal(payload)
+	data, err := lcs.Marshal(payload)
 	if err != nil {
 		return "", err
 	}
-	return contract.chain.SubmitTransactionPayload(account, data)
+	return contract.chain.SubmitTransactionPayloadBCS(account, data)
 }
 
-func (contract *aptosRedPacketContract) createPayload(rpa *RedPacketAction) (*aptostypes.Payload, error) {
+func (contract *aptosRedPacketContract) createPayload(rpa *RedPacketAction) (txbuilder.TransactionPayload, error) {
 	switch rpa.Method {
 	case RPAMethodCreate:
 		if nil == rpa.CreateParams {
@@ -172,41 +192,52 @@ func (contract *aptosRedPacketContract) createPayload(rpa *RedPacketAction) (*ap
 			return nil, err
 		}
 		amountTotal := calcTotal(amount, feePoint)
-		return &aptostypes.Payload{
-			Type:          aptostypes.EntryFunctionPayload,
-			Function:      contract.address + "::red_packet::create",
-			TypeArguments: []string{},
-			Arguments: []interface{}{
-				strconv.FormatInt(int64(rpa.CreateParams.Count), 10),
-				strconv.FormatUint(amountTotal, 10),
+		return contract.abi.BuildTransactionPayload(
+			contract.address+"::red_packet::create",
+			[]string{},
+			[]any{
+				uint64(rpa.CreateParams.Count),
+				uint64(amountTotal),
 			},
-		}, nil
+		)
 	case RPAMethodOpen:
 		if nil == rpa.OpenParams {
 			return nil, fmt.Errorf("open params is nil")
 		}
-		return &aptostypes.Payload{
-			Type:          aptostypes.EntryFunctionPayload,
-			Function:      contract.address + "::red_packet::open",
-			TypeArguments: []string{},
-			Arguments: []interface{}{
-				strconv.FormatInt(int64(rpa.OpenParams.PacketId), 10),
-				rpa.OpenParams.Addresses,
-				rpa.OpenParams.Amounts,
+		amountsArr := make([]any, len(rpa.OpenParams.Amounts))
+		addressList := make([]any, len(rpa.OpenParams.Addresses))
+		var err error
+		for i, a := range rpa.OpenParams.Amounts {
+			amountsArr[i], err = strconv.ParseUint(a, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("open amounts error")
+			}
+			paddress, e := txbuilder.NewAccountAddressFromHex(rpa.OpenParams.Addresses[i])
+			if e != nil {
+				return nil, fmt.Errorf("open amounts error")
+			}
+			addressList[i] = *paddress
+		}
+		return contract.abi.BuildTransactionPayload(
+			contract.address+"::red_packet::open",
+			[]string{},
+			[]any{
+				uint64(rpa.OpenParams.PacketId),
+				addressList,
+				amountsArr,
 			},
-		}, nil
+		)
 	case RPAMethodClose:
 		if nil == rpa.CloseParams {
 			return nil, fmt.Errorf("close params is nil")
 		}
-		return &aptostypes.Payload{
-			Type:          aptostypes.EntryFunctionPayload,
-			Function:      contract.address + "::red_packet::close",
-			TypeArguments: []string{},
-			Arguments: []interface{}{
-				strconv.FormatInt(int64(rpa.CloseParams.PacketId), 10),
+		return contract.abi.BuildTransactionPayload(
+			contract.address+"::red_packet::close",
+			[]string{},
+			[]any{
+				uint64(rpa.CloseParams.PacketId),
 			},
-		}, nil
+		)
 	default:
 		return nil, fmt.Errorf("unsopported red packet method %s", rpa.Method)
 	}
