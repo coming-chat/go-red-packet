@@ -17,7 +17,7 @@ import (
 const (
 	AptosName    = aptos.AptosName
 	AptosSymbol  = aptos.AptosSymbol
-	AptosDecimal = aptos.AptosDecimal
+	AptosDecimal = 8
 
 	createABIFormat = "0106637265617465%s0a7265645f7061636b657400000205636f756e74020d746f74616c5f62616c616e636502"
 	openABIFormat   = "01046f70656e%s0a7265645f7061636b6574000003026964020e6c75636b795f6163636f756e747306040862616c616e6365730602"
