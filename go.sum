@@ -114,6 +114,8 @@ github.com/cloudflare/cloudflare-go v0.14.0/go.mod h1:EnwdgGMaFOruiPZRFSgn+TsQ3h
 github.com/cmars/basen v0.0.0-20150613233007-fe3947df716e/go.mod h1:P13beTBKr5Q18lJe1rIoLUqjM+CB1zYrRg44ZqGuQSA=
 github.com/coming-chat/go-aptos v0.0.0-20220921070401-1b9e60a45628 h1:F5/x4o01OBAop6xlnqbTgY1lC5ZsZwxVjUTOgVdtv9A=
 github.com/coming-chat/go-aptos v0.0.0-20220921070401-1b9e60a45628/go.mod h1:HaGBPmQOlKzxkbGancRSX8wcwDxvj9Zs173CSla43vE=
+github.com/coming-chat/go-aptos v0.0.0-20220922074004-bbb7f5ee886a h1:Gm4+grIBON+TTNKazHGbHeAL9x3PQ+W9lvPK/WGbg2k=
+github.com/coming-chat/go-aptos v0.0.0-20220922074004-bbb7f5ee886a/go.mod h1:HaGBPmQOlKzxkbGancRSX8wcwDxvj9Zs173CSla43vE=
 github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf h1:HrK16SFZnoxATieE+UHFSHZ6D2+XApv9g752MgvW7es=
 github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf/go.mod h1:CVVNl2j3TGYyUjuux+oYrRenPGvD+5UQbPGYp/zUews=
 github.com/coming-chat/wallet-SDK v0.2.7-0.20220921084317-032f6e507f49 h1:lzjzGd3cB7zRtwRFRIUcZ80Jyi7VaVZDTPdGYHjMRIE=

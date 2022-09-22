@@ -13,6 +13,7 @@ const (
 )
 
 func main() {
+	tokenAddress := "0x35ce8b3fe6d0c3baa7386bccd3d15ce7825d8568237bf48d510ae4f1ddeeff94::sun_coin::SunCoin"
 	chain := aptos.NewChainWithRestUrl(testNetUrl)
 	account, err := aptos.AccountWithPrivateKey(os.Getenv("private"))
 	if err != nil {
@@ -22,11 +23,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	action, err := redpacket.NewRedPacketActionCreate("", 5, "100000")
+	action, err := redpacket.NewRedPacketActionCreate(tokenAddress, 5, "100000")
 	if err != nil {
 		panic(err)
 	}
-	// action, err := redpacket.NewRedPacketActionOpen(3, []string{
+	// action, err := redpacket.NewRedPacketActionOpen(tokenAddress, 2, []string{
 	// 	account.Address(),
 	// 	account.Address(),
 	// 	account.Address(),
@@ -39,9 +40,9 @@ func main() {
 	// 	"20000",
 	// 	"20000",
 	// })
-	if err != nil {
-		panic(err)
-	}
+	// if err != nil {
+	// 	panic(err)
+	// }
 	gasFee, err := contract.EstimateGasFee(account, action)
 	if err != nil {
 		panic(err)

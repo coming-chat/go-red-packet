@@ -35,13 +35,15 @@ type RedPacketCreateParams struct {
 	Amount       string
 }
 type RedPacketOpenParams struct {
-	PacketId  int64
-	Addresses []string
-	Amounts   []string
+	TokenAddress string
+	PacketId     int64
+	Addresses    []string
+	Amounts      []string
 }
 type RedPacketCloseParams struct {
-	PacketId int64
-	Creator  string
+	TokenAddress string
+	PacketId     int64
+	Creator      string
 }
 
 type RedPacketDetail struct {
@@ -59,6 +61,9 @@ func NewRedPacketActionCreate(tokenAddress string, count int, amount string) (*R
 	if !ok {
 		return nil, fmt.Errorf("invalid red packet amount %v", amount)
 	}
+	if tokenAddress == "" {
+		return nil, fmt.Errorf("tokenAddress must not empty")
+	}
 	return &RedPacketAction{
 		Method: RPAMethodCreate,
 		CreateParams: &RedPacketCreateParams{
@@ -70,7 +75,7 @@ func NewRedPacketActionCreate(tokenAddress string, count int, amount string) (*R
 }
 
 // 批量打开红包 的操作
-func NewRedPacketActionOpen(packetId int64, addresses []string, amounts []string) (*RedPacketAction, error) {
+func NewRedPacketActionOpen(tokenAddress string, packetId int64, addresses []string, amounts []string) (*RedPacketAction, error) {
 	if len(addresses) != len(amounts) {
 		return nil, fmt.Errorf("the number of opened addresses is not the same as the amount")
 	}
@@ -83,20 +88,22 @@ func NewRedPacketActionOpen(packetId int64, addresses []string, amounts []string
 	return &RedPacketAction{
 		Method: RPAMethodOpen,
 		OpenParams: &RedPacketOpenParams{
-			PacketId:  packetId,
-			Addresses: addresses,
-			Amounts:   amounts,
+			TokenAddress: tokenAddress,
+			PacketId:     packetId,
+			Addresses:    addresses,
+			Amounts:      amounts,
 		},
 	}, nil
 }
 
 // 结束红包领取 的操作
-func NewRedPacketActionClose(packetId int64, creator string) (*RedPacketAction, error) {
+func NewRedPacketActionClose(tokenAddress string, packetId int64, creator string) (*RedPacketAction, error) {
 	return &RedPacketAction{
 		Method: RPAMethodClose,
 		CloseParams: &RedPacketCloseParams{
-			PacketId: packetId,
-			Creator:  creator,
+			TokenAddress: tokenAddress,
+			PacketId:     packetId,
+			Creator:      creator,
 		},
 	}, nil
 }

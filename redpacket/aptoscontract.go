@@ -19,9 +19,9 @@ const (
 	AptosSymbol  = aptos.AptosSymbol
 	AptosDecimal = 8
 
-	createABIFormat = "0106637265617465%s0a7265645f7061636b657400000205636f756e74020d746f74616c5f62616c616e636502"
-	openABIFormat   = "01046f70656e%s0a7265645f7061636b6574000003026964020e6c75636b795f6163636f756e747306040862616c616e6365730602"
-	closeABIFormat  = "0105636c6f7365%s0a7265645f7061636b657400000102696402"
+	createABIFormat = "0106637265617465%s0a7265645f7061636b6574322063616c6c20627920616e796f6e6520696e20636f6d696e67636861740a20637265617465206120726564207061636b65740109636f696e5f747970650205636f756e74020d746f74616c5f62616c616e636502"
+	openABIFormat   = "01046f70656e%s0a7265645f7061636b65748201206f6666636861696e20636865636b0a20312e2064656475706c6963617465206c75636b79206163636f756e74730a20322e20636865636b206c75636b79206163636f756e74206973206578736973740a20332e20636865636b20746f74616c2062616c616e63650a2063616c6c20627920636f6d696e67636861742061646d696e0109636f696e5f7479706503026964020e6c75636b795f6163636f756e747306040862616c616e6365730602"
+	closeABIFormat  = "0105636c6f7365%s0a7265645f7061636b65742d2063616c6c20627920636f6d696e67636861742061646d696e0a20636c6f7365206120726564207061636b65740109636f696e5f747970650102696402"
 )
 
 // aptosRedPacketContract implement RedPacketContract interface
@@ -122,10 +122,19 @@ func (contract *aptosRedPacketContract) FetchRedPacketCreationDetail(hash string
 		return nil, newRedPacketDataError(err.Error())
 	}
 
+	if len(transaction.Payload.TypeArguments) == 0 {
+		return nil, newRedPacketDataError("invalid transaction type args")
+	}
+
+	coinInfo, err := client.GetCoinInfo(transaction.Payload.TypeArguments[0])
+	if err != nil {
+		return nil, err
+	}
+
 	redPacketDetail := &RedPacketDetail{
 		TransactionDetail: baseTransaction,
-		AmountName:        AptosName,
-		AmountDecimal:     AptosDecimal,
+		AmountName:        coinInfo.Name,
+		AmountDecimal:     int16(coinInfo.Decimals),
 	}
 
 	if len(transaction.Payload.Arguments) < 2 {
@@ -191,7 +200,9 @@ func (contract *aptosRedPacketContract) createPayload(rpa *RedPacketAction) (txb
 		amountTotal := calcTotal(amount, feePoint)
 		return contract.abi.BuildTransactionPayload(
 			contract.address+"::red_packet::create",
-			[]string{},
+			[]string{
+				rpa.CreateParams.TokenAddress,
+			},
 			[]any{
 				uint64(rpa.CreateParams.Count),
 				uint64(amountTotal),
@@ -200,6 +211,9 @@ func (contract *aptosRedPacketContract) createPayload(rpa *RedPacketAction) (txb
 	case RPAMethodOpen:
 		if nil == rpa.OpenParams {
 			return nil, fmt.Errorf("open params is nil")
+		}
+		if rpa.OpenParams.TokenAddress == "" {
+			return nil, fmt.Errorf("params.TokenAddress must not empty")
 		}
 		amountsArr := make([]any, len(rpa.OpenParams.Amounts))
 		addressList := make([]any, len(rpa.OpenParams.Addresses))
@@ -217,7 +231,9 @@ func (contract *aptosRedPacketContract) createPayload(rpa *RedPacketAction) (txb
 		}
 		return contract.abi.BuildTransactionPayload(
 			contract.address+"::red_packet::open",
-			[]string{},
+			[]string{
+				rpa.OpenParams.TokenAddress,
+			},
 			[]any{
 				uint64(rpa.OpenParams.PacketId),
 				addressList,
@@ -228,9 +244,14 @@ func (contract *aptosRedPacketContract) createPayload(rpa *RedPacketAction) (txb
 		if nil == rpa.CloseParams {
 			return nil, fmt.Errorf("close params is nil")
 		}
+		if rpa.CloseParams.TokenAddress == "" {
+			return nil, fmt.Errorf("params.TokenAddress must not empty")
+		}
 		return contract.abi.BuildTransactionPayload(
 			contract.address+"::red_packet::close",
-			[]string{},
+			[]string{
+				rpa.CloseParams.TokenAddress,
+			},
 			[]any{
 				uint64(rpa.CloseParams.PacketId),
 			},
