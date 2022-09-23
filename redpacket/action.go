@@ -96,8 +96,9 @@ func NewRedPacketActionOpen(tokenAddress string, packetId int64, addresses []str
 	}, nil
 }
 
-// 结束红包领取 的操作
-func NewRedPacketActionClose(tokenAddress string, packetId int64, creator string) (*RedPacketAction, error) {
+// NewRedPacketActionClose close red packet
+// add empty arg to distinct with NewRedPacketActionCreate signature when build jar
+func NewRedPacketActionClose(tokenAddress string, packetId int64, creator string, _ string) (*RedPacketAction, error) {
 	return &RedPacketAction{
 		Method: RPAMethodClose,
 		CloseParams: &RedPacketCloseParams{
