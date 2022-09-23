@@ -122,6 +122,8 @@ github.com/coming-chat/wallet-SDK v0.2.7-0.20220921084317-032f6e507f49 h1:lzjzGd
 github.com/coming-chat/wallet-SDK v0.2.7-0.20220921084317-032f6e507f49/go.mod h1:5wrtQ5jX8iA9/mHnxsgOyYNgGkCG7rzuUiysS26PaxA=
 github.com/coming-chat/wallet-SDK v0.2.7-0.20220921101514-ecb6ca3d20b2 h1:CPWXNbCQy4ydrzZ44cdTiYrLVDkq1u/d8o9aWEXNRwI=
 github.com/coming-chat/wallet-SDK v0.2.7-0.20220921101514-ecb6ca3d20b2/go.mod h1:fgxYfz7ARYshV0hfot1DwrUMG4Mi8jJxznu420GUuMo=
+github.com/coming-chat/wallet-SDK v0.2.7-0.20220923020408-ab5077a61e86 h1:oVxU5O7EzOVVsEtRb1Lze1bxTBXO312nPM5CzFV1u2A=
+github.com/coming-chat/wallet-SDK v0.2.7-0.20220923020408-ab5077a61e86/go.mod h1:DH2VtRLAFHesrI5OSgBA3/srQjOI9ReRRvMcSfEGL4k=
 github.com/consensys/bavard v0.1.8-0.20210406032232-f3452dc9b572/go.mod h1:Bpd0/3mZuaj6Sj+PqrmIquiOKy397AKGThQPaGzNXAQ=
 github.com/consensys/gnark-crypto v0.4.1-0.20210426202927-39ac3d4b3f1f/go.mod h1:815PAHg3wvysy0SyIqanF8gZ0Y1wjk/hrDHD/iT88+Q=
 github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d/go.mod h1:tSxLoYXyBmiFeKpvmq4dzayMdCjCnu8uqmCysIGBT2Y=
