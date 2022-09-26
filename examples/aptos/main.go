@@ -13,7 +13,7 @@ const (
 )
 
 func main() {
-	tokenAddress := "0x35ce8b3fe6d0c3baa7386bccd3d15ce7825d8568237bf48d510ae4f1ddeeff94::sun_coin::SunCoin"
+	tokenAddress := "0x1::aptos_coin::AptosCoin"
 	chain := aptos.NewChainWithRestUrl(testNetUrl)
 	account, err := aptos.AccountWithPrivateKey(os.Getenv("private"))
 	if err != nil {

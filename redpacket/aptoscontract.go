@@ -19,10 +19,16 @@ const (
 	AptosSymbol  = aptos.AptosSymbol
 	AptosDecimal = 8
 
-	createABIFormat = "0106637265617465%s0a7265645f7061636b6574322063616c6c20627920616e796f6e6520696e20636f6d696e67636861740a20637265617465206120726564207061636b65740109636f696e5f747970650205636f756e74020d746f74616c5f62616c616e636502"
-	openABIFormat   = "01046f70656e%s0a7265645f7061636b65748201206f6666636861696e20636865636b0a20312e2064656475706c6963617465206c75636b79206163636f756e74730a20322e20636865636b206c75636b79206163636f756e74206973206578736973740a20332e20636865636b20746f74616c2062616c616e63650a2063616c6c20627920636f6d696e67636861742061646d696e0109636f696e5f7479706503026964020e6c75636b795f6163636f756e747306040862616c616e6365730602"
-	closeABIFormat  = "0105636c6f7365%s0a7265645f7061636b65742d2063616c6c20627920636f6d696e67636861742061646d696e0a20636c6f7365206120726564207061636b65740109636f696e5f747970650102696402"
+	createABIFormat = "0106637265617465%s0a7265645f7061636b6574322063616c6c20627920616e796f6e6520696e20636f6d696e67636861740a20637265617465206120726564207061636b65740109636f696e5f74797065030d68616e646c65725f696e6465780205636f756e74020d746f74616c5f62616c616e636502"
+	openABIFormat   = "01046f70656e%s0a7265645f7061636b65748201206f6666636861696e20636865636b0a20312e2064656475706c6963617465206c75636b79206163636f756e74730a20322e20636865636b206c75636b79206163636f756e74206973206578736973740a20332e20636865636b20746f74616c2062616c616e63650a2063616c6c20627920636f6d696e67636861742061646d696e0109636f696e5f74797065040d68616e646c65725f696e64657802026964020e6c75636b795f6163636f756e747306040862616c616e6365730602"
+	closeABIFormat  = "0105636c6f7365%s0a7265645f7061636b65742d2063616c6c20627920636f6d696e67636861742061646d696e0a20636c6f7365206120726564207061636b65740109636f696e5f74797065020d68616e646c65725f696e6465780202696402"
 )
+
+type tokenHandler struct {
+	CoinType     string
+	HandlerIndex uint64
+	FeePoint     uint64
+}
 
 // aptosRedPacketContract implement RedPacketContract interface
 type aptosRedPacketContract struct {
@@ -61,11 +67,11 @@ func (contract *aptosRedPacketContract) EstimateFee(rpa *RedPacketAction) (strin
 		if err != nil {
 			return "", err
 		}
-		feePoint, err := contract.getFeePoint()
+		handler, err := contract.getTokenHandler(rpa.CreateParams.TokenAddress)
 		if err != nil {
 			return "", err
 		}
-		total := calcTotal(amount, uint64(feePoint))
+		total := calcTotal(amount, uint64(handler.FeePoint))
 		return strconv.FormatUint(total-amount, 10), nil
 	default:
 		return "", errors.New("method invalid")
@@ -90,18 +96,32 @@ func (contract *aptosRedPacketContract) EstimateGasFee(acocunt base.Account, rpa
 
 // getFeePoint get fee_point from contract by resouce
 // when api support call move public function, should not use resouce
-func (contract *aptosRedPacketContract) getFeePoint() (uint64, error) {
+func (contract *aptosRedPacketContract) getTokenHandler(tokenAddress string) (tokenHandler, error) {
 	client, err := contract.chain.GetClient()
 	if err != nil {
-		return 0, err
+		return tokenHandler{}, errors.New("get client failed")
 	}
-	resource, err := client.GetAccountResource(contract.address, contract.address+"::red_packet::RedPackets", 0)
+	resource, err := client.GetAccountResource(contract.address, contract.address+"::red_packet::GlobalConfig", 0)
 	if err != nil {
-		return 0, err
+		return tokenHandler{}, errors.New("not found account resource")
 	}
-	config, _ := resource.Data["config"].(map[string]interface{})
-	feePoint, _ := config["fee_point"].(float64)
-	return uint64(feePoint), nil
+	handlers, _ := resource.Data["handlers"].([]interface{})
+	for _, handler := range handlers {
+		handlerMap, _ := handler.(map[string]interface{})
+		coinType, _ := handlerMap["coin_type"].(string)
+		if coinType != tokenAddress {
+			continue
+		}
+		config, _ := handlerMap["config"].(map[string]interface{})
+		feePoint, _ := config["fee_point"].(float64)
+		handlerIndex, _ := strconv.ParseUint(handlerMap["handler_index"].(string), 10, 64)
+		return tokenHandler{
+			CoinType:     coinType,
+			HandlerIndex: handlerIndex,
+			FeePoint:     uint64(feePoint),
+		}, nil
+	}
+	return tokenHandler{}, errors.New("not found token handler")
 }
 
 func (contract *aptosRedPacketContract) FetchRedPacketCreationDetail(hash string) (*RedPacketDetail, error) {
@@ -137,10 +157,10 @@ func (contract *aptosRedPacketContract) FetchRedPacketCreationDetail(hash string
 		AmountDecimal:     int16(coinInfo.Decimals),
 	}
 
-	if len(transaction.Payload.Arguments) < 2 {
+	if len(transaction.Payload.Arguments) < 3 {
 		return redPacketDetail, newRedPacketDataError(fmt.Sprintf("invalid payload arguments, len %d", len(transaction.Payload.Arguments)))
 	}
-	baseTransaction.Amount = transaction.Payload.Arguments[1].(string)
+	baseTransaction.Amount = transaction.Payload.Arguments[2].(string)
 
 	redPacketAmount := "0"
 
@@ -193,17 +213,18 @@ func (contract *aptosRedPacketContract) createPayload(rpa *RedPacketAction) (txb
 		if err != nil {
 			return nil, fmt.Errorf("amount params is not uint64")
 		}
-		feePoint, err := contract.getFeePoint()
+		handler, err := contract.getTokenHandler(rpa.CreateParams.TokenAddress)
 		if err != nil {
 			return nil, err
 		}
-		amountTotal := calcTotal(amount, feePoint)
+		amountTotal := calcTotal(amount, handler.FeePoint)
 		return contract.abi.BuildTransactionPayload(
 			contract.address+"::red_packet::create",
 			[]string{
 				rpa.CreateParams.TokenAddress,
 			},
 			[]any{
+				handler.HandlerIndex,
 				uint64(rpa.CreateParams.Count),
 				uint64(amountTotal),
 			},
@@ -229,12 +250,17 @@ func (contract *aptosRedPacketContract) createPayload(rpa *RedPacketAction) (txb
 			}
 			addressList[i] = *paddress
 		}
+		handler, err := contract.getTokenHandler(rpa.OpenParams.TokenAddress)
+		if err != nil {
+			return nil, err
+		}
 		return contract.abi.BuildTransactionPayload(
 			contract.address+"::red_packet::open",
 			[]string{
 				rpa.OpenParams.TokenAddress,
 			},
 			[]any{
+				handler.HandlerIndex,
 				uint64(rpa.OpenParams.PacketId),
 				addressList,
 				amountsArr,
@@ -247,12 +273,17 @@ func (contract *aptosRedPacketContract) createPayload(rpa *RedPacketAction) (txb
 		if rpa.CloseParams.TokenAddress == "" {
 			return nil, fmt.Errorf("params.TokenAddress must not empty")
 		}
+		handler, err := contract.getTokenHandler(rpa.CloseParams.TokenAddress)
+		if err != nil {
+			return nil, err
+		}
 		return contract.abi.BuildTransactionPayload(
 			contract.address+"::red_packet::close",
 			[]string{
 				rpa.CloseParams.TokenAddress,
 			},
 			[]any{
+				handler.HandlerIndex,
 				uint64(rpa.CloseParams.PacketId),
 			},
 		)
