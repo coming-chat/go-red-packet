@@ -116,6 +116,8 @@ github.com/coming-chat/go-aptos v0.0.0-20220921070401-1b9e60a45628 h1:F5/x4o01OB
 github.com/coming-chat/go-aptos v0.0.0-20220921070401-1b9e60a45628/go.mod h1:HaGBPmQOlKzxkbGancRSX8wcwDxvj9Zs173CSla43vE=
 github.com/coming-chat/go-aptos v0.0.0-20220922074004-bbb7f5ee886a h1:Gm4+grIBON+TTNKazHGbHeAL9x3PQ+W9lvPK/WGbg2k=
 github.com/coming-chat/go-aptos v0.0.0-20220922074004-bbb7f5ee886a/go.mod h1:HaGBPmQOlKzxkbGancRSX8wcwDxvj9Zs173CSla43vE=
+github.com/coming-chat/go-aptos v0.0.0-20221103071223-ffb02e9c1df9 h1:IY+V4z7JBO3+s0Rp3eiQ8IBK8ZUGVhynTdg+oq9Tevg=
+github.com/coming-chat/go-aptos v0.0.0-20221103071223-ffb02e9c1df9/go.mod h1:HaGBPmQOlKzxkbGancRSX8wcwDxvj9Zs173CSla43vE=
 github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf h1:HrK16SFZnoxATieE+UHFSHZ6D2+XApv9g752MgvW7es=
 github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf/go.mod h1:CVVNl2j3TGYyUjuux+oYrRenPGvD+5UQbPGYp/zUews=
 github.com/coming-chat/wallet-SDK v0.2.7-0.20220921084317-032f6e507f49 h1:lzjzGd3cB7zRtwRFRIUcZ80Jyi7VaVZDTPdGYHjMRIE=
@@ -124,6 +126,8 @@ github.com/coming-chat/wallet-SDK v0.2.7-0.20220921101514-ecb6ca3d20b2 h1:CPWXNb
 github.com/coming-chat/wallet-SDK v0.2.7-0.20220921101514-ecb6ca3d20b2/go.mod h1:fgxYfz7ARYshV0hfot1DwrUMG4Mi8jJxznu420GUuMo=
 github.com/coming-chat/wallet-SDK v0.2.7-0.20220923020408-ab5077a61e86 h1:oVxU5O7EzOVVsEtRb1Lze1bxTBXO312nPM5CzFV1u2A=
 github.com/coming-chat/wallet-SDK v0.2.7-0.20220923020408-ab5077a61e86/go.mod h1:DH2VtRLAFHesrI5OSgBA3/srQjOI9ReRRvMcSfEGL4k=
+github.com/coming-chat/wallet-SDK v0.2.7-0.20221103071458-dcc4341157d2 h1:+HT/uI4DLDBU3Ha5zwTQyQfwtmJnNaEeknnduQPnMD8=
+github.com/coming-chat/wallet-SDK v0.2.7-0.20221103071458-dcc4341157d2/go.mod h1:RE06rCFd76JVhf0T5Ju/7+/hCwBcMB1v8pv1ToFQsZA=
 github.com/consensys/bavard v0.1.8-0.20210406032232-f3452dc9b572/go.mod h1:Bpd0/3mZuaj6Sj+PqrmIquiOKy397AKGThQPaGzNXAQ=
 github.com/consensys/gnark-crypto v0.4.1-0.20210426202927-39ac3d4b3f1f/go.mod h1:815PAHg3wvysy0SyIqanF8gZ0Y1wjk/hrDHD/iT88+Q=
 github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d/go.mod h1:tSxLoYXyBmiFeKpvmq4dzayMdCjCnu8uqmCysIGBT2Y=
