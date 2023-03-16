@@ -115,10 +115,6 @@ github.com/coming-chat/go-sui v0.0.0-20230223034339-8c7b35690e6d h1:16RUvUNTxEGy
 github.com/coming-chat/go-sui v0.0.0-20230223034339-8c7b35690e6d/go.mod h1:D3s+A1WjI5fg/htr/F1OR72+MGEFFtMoheufXfMDDPA=
 github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf h1:HrK16SFZnoxATieE+UHFSHZ6D2+XApv9g752MgvW7es=
 github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf/go.mod h1:CVVNl2j3TGYyUjuux+oYrRenPGvD+5UQbPGYp/zUews=
-github.com/coming-chat/wallet-SDK v0.2.7-0.20230223034542-c48952df2cb1 h1:Qj7ChsnYBj5Egh/azaX/CMBW2/rsLGhgO3SEuosazuQ=
-github.com/coming-chat/wallet-SDK v0.2.7-0.20230223034542-c48952df2cb1/go.mod h1:X/GH2g1DUVkGtS+ZbEFVeBYG+O+yAhFMcp07pT4ylRY=
-github.com/coming-chat/wallet-SDK v0.2.7-0.20230316085303-cc672d8636ea h1:i7W9p7X6rT5PQqA7PjK7CjJ9K3SugNWmwJfKn0saA0k=
-github.com/coming-chat/wallet-SDK v0.2.7-0.20230316085303-cc672d8636ea/go.mod h1:X/GH2g1DUVkGtS+ZbEFVeBYG+O+yAhFMcp07pT4ylRY=
 github.com/coming-chat/wallet-SDK v0.2.7-0.20230316094049-2f7599d60a0d h1:PkTiUbRxMrjLlsqRoMqj4QnkNoz/7ejEgEqWw8lwPpU=
 github.com/coming-chat/wallet-SDK v0.2.7-0.20230316094049-2f7599d60a0d/go.mod h1:X/GH2g1DUVkGtS+ZbEFVeBYG+O+yAhFMcp07pT4ylRY=
 github.com/consensys/bavard v0.1.8-0.20210406032232-f3452dc9b572/go.mod h1:Bpd0/3mZuaj6Sj+PqrmIquiOKy397AKGThQPaGzNXAQ=
