@@ -13,7 +13,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	contract, err := redpacket.NewRedPacketContract(redpacket.ChainTypeEth, chain, os.Getenv("red_packet"))
+	contract, err := redpacket.NewRedPacketContract(redpacket.ChainTypeEth, chain, os.Getenv("red_packet"), nil)
 	if err != nil {
 		panic(err)
 	}

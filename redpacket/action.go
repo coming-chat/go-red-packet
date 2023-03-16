@@ -35,15 +35,17 @@ type RedPacketCreateParams struct {
 	Amount       string
 }
 type RedPacketOpenParams struct {
-	TokenAddress string
-	PacketId     int64
-	Addresses    []string
-	Amounts      []string
+	TokenAddress   string
+	PacketId       int64  // aptos/eth use packetId
+	PacketObjectId string // sui use packetObjectId
+	Addresses      []string
+	Amounts        []string
 }
 type RedPacketCloseParams struct {
-	TokenAddress string
-	PacketId     int64
-	Creator      string
+	TokenAddress   string
+	PacketId       int64  // aptos/eth use packetId
+	PacketObjectId string // sui use packetObjectId
+	Creator        string
 }
 
 type RedPacketDetail struct {
