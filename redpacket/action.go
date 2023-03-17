@@ -98,6 +98,27 @@ func NewRedPacketActionOpen(tokenAddress string, packetId int64, addresses []str
 	}, nil
 }
 
+func NewSuiRedpacketActionOpen(tokenAddress string, packetObjectId string, addresses []string, amounts []string) (*RedPacketAction, error) {
+	if len(addresses) != len(amounts) {
+		return nil, fmt.Errorf("the number of opened addresses is not the same as the amount")
+	}
+	for _, amount := range amounts {
+		_, ok := big.NewInt(0).SetString(amount, 10)
+		if !ok {
+			return nil, fmt.Errorf("invalid red packet amount %v", amount)
+		}
+	}
+	return &RedPacketAction{
+		Method: RPAMethodOpen,
+		OpenParams: &RedPacketOpenParams{
+			TokenAddress:   tokenAddress,
+			Addresses:      addresses,
+			Amounts:        amounts,
+			PacketObjectId: packetObjectId,
+		},
+	}, nil
+}
+
 // NewRedPacketActionClose close red packet
 // add empty arg to distinct with NewRedPacketActionCreate signature when build jar
 func NewRedPacketActionClose(tokenAddress string, packetId int64, creator string, _ string) (*RedPacketAction, error) {
@@ -107,6 +128,17 @@ func NewRedPacketActionClose(tokenAddress string, packetId int64, creator string
 			TokenAddress: tokenAddress,
 			PacketId:     packetId,
 			Creator:      creator,
+		},
+	}, nil
+}
+
+func NewSuiRedPacketActionClose(tokenAddress string, packetObjectId string, creator string, _ string) (*RedPacketAction, error) {
+	return &RedPacketAction{
+		Method: RPAMethodClose,
+		CloseParams: &RedPacketCloseParams{
+			TokenAddress:   tokenAddress,
+			PacketObjectId: packetObjectId,
+			Creator:        creator,
 		},
 	}, nil
 }
