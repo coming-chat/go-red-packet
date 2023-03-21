@@ -23,7 +23,7 @@ func main() {
 	}
 	
 	// 创建合约对象，以及想要执行的 action
-	contract, err := redpacket.NewRedPacketContract(redpacket.ChainTypeAptos, chain, os.Getenv("red_packet"))
+	contract, err := redpacket.NewRedPacketContract(redpacket.ChainTypeAptos, chain, os.Getenv("red_packet"), nil)
 	if err != nil {
 		panic(err)
 	}
@@ -55,7 +55,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	contract, err := redpacket.NewRedPacketContract(redpacket.ChainTypeEth, chain, os.Getenv("red_packet"))
+	contract, err := redpacket.NewRedPacketContract(redpacket.ChainTypeEth, chain, os.Getenv("red_packet"), nil)
 	if err != nil {
 		panic(err)
 	}
@@ -77,6 +77,26 @@ func main() {
 
 ```
 
+sui 创建红包实例
+```go
+redpacketPackageId := "0xa18d087873b719be07b3e24506ec260d1fed88d7"
+contract, err := redpacket.NewRedPacketContract(redpacket.ChainTypeSui, chain, redpacketPackageId, &redpacket.ContractConfig{
+	SuiConfigAddress: "0xba6780a9a4701cb00b979a3393a189e8adf51022",
+})
+action, err := redpacket.NewRedPacketActionCreate("", 5, "100000")
+if err != nil {
+	panic(err)
+}
+txHash, err := contract.SendTransaction(account, action)
+if err != nil {
+	panic(err)
+}
+txDetail, err := chain.FetchTransactionDetail(txHash)
+if err != nil {
+	panic(err)
+}
+```
+
 ## 红包费用
 
 发红包的费用分为两部分
@@ -84,6 +104,7 @@ func main() {
 2. 合约服务费
    1. eth 红包合约收取的是链原声币作为服务费
    2. aptos 红包合约收取的是当前代币作为服务费（目前仅支持原生币红包）
+   3. sui 红包合约收取的是当前呆逼作为服务费
 
 `RedPacketContract` 接口方法 `EstimateFee(*RedPacketAction) (string, error)` 获取合约服务费。
 方法 `EstimateGasFee(base.Account, *RedPacketAction) (string, error)` 获取 gas fee （gasLimit * gasPrice）。
