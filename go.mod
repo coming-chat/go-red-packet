@@ -4,9 +4,9 @@ go 1.18
 
 require (
 	github.com/coming-chat/go-aptos v0.0.0-20230225124212-15dba2e4eeb3
-	github.com/coming-chat/go-sui v0.0.0-20230223034339-8c7b35690e6d
+	github.com/coming-chat/go-sui v0.0.0-20230404101939-b209bf97b1f9
 	github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf
-	github.com/coming-chat/wallet-SDK v0.2.7-0.20230316094049-2f7599d60a0d
+	github.com/coming-chat/wallet-SDK v0.2.7-0.20230404094234-817806acd7b6
 	github.com/ethereum/go-ethereum v1.10.18
 )
 
@@ -34,7 +34,7 @@ require (
 	github.com/pierrec/xxHash v0.1.5 // indirect
 	github.com/rjeczalik/notify v0.9.1 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
-	github.com/shopspring/decimal v1.2.0 // indirect
+	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect

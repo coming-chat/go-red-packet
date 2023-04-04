@@ -53,13 +53,16 @@ func (c *suiRedPacketContract) SendTransaction(account base.Account, rpa *RedPac
 	if err != nil {
 		return "", err
 	}
-	privateKey, err := account.PrivateKey()
+
+	suiAccount, ok := account.(*sui.Account)
+	if !ok {
+		return "", errors.New("invalid account object")
+	}
+
+	signedTxn, err := tx.SignWithAccount(suiAccount)
 	if err != nil {
 		return "", err
 	}
-	publicKey := account.PublicKey()
-	privateKey = append(privateKey, publicKey...) // ed25519 sign use privateKey + publicKey
-	signedTxn := tx.Txn.SignSerializedSigWith(privateKey)
 	bytes, err := json.Marshal(signedTxn)
 	if err != nil {
 		return "", err
@@ -198,13 +201,17 @@ func (c *suiRedPacketContract) pickGas(cli *client.Client, account base.Account,
 	if err != nil {
 		return nil, err
 	}
-	return &gasCoin.Reference.ObjectId, nil
+	return &gasCoin.Reference().ObjectId, nil
 }
 
 func (c *suiRedPacketContract) pickCoinsAndGas(cli *client.Client, account base.Account, rpa *RedPacketAction) ([]types.ObjectId, *types.ObjectId, error) {
 	ctx := context.Background()
 	addressHex, _ := types.NewHexData(account.Address())
-	allCoins, err := cli.GetCoinsOwnedByAddress(ctx, *addressHex, rpa.CreateParams.TokenAddress)
+	allCoinsStruct, err := cli.GetCoins(ctx, *addressHex, &rpa.CreateParams.TokenAddress, nil, 100)
+	allCoins := make(types.Coins, 0)
+	for _, coin := range allCoinsStruct.Data {
+		allCoins = append(allCoins, coin)
+	}
 	if err != nil {
 		return nil, nil, err
 	}
@@ -242,9 +249,9 @@ func (c *suiRedPacketContract) pickCoinsAndGas(cli *client.Client, account base.
 	}
 	coinObjs := make([]types.ObjectId, len(coins))
 	for i := range coins {
-		coinObjs[i] = coins[i].Reference.ObjectId
+		coinObjs[i] = coins[i].Reference().ObjectId
 	}
-	return coinObjs, &gasCoin.Reference.ObjectId, nil
+	return coinObjs, &gasCoin.Reference().ObjectId, nil
 }
 
 func (c *suiRedPacketContract) FetchRedPacketCreationDetail(hash string) (detail *RedPacketDetail, err error) {
@@ -254,7 +261,11 @@ func (c *suiRedPacketContract) FetchRedPacketCreationDetail(hash string) (detail
 	if err != nil {
 		return nil, err
 	}
-	resp, err := cli.GetTransaction(context.Background(), hash)
+	resp, err := cli.GetTransactionBlock(context.Background(), hash, types.SuiTransactionBlockResponseOptions{
+		ShowInput:   true,
+		ShowEffects: true,
+		ShowEvents:  true,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -263,12 +274,16 @@ func (c *suiRedPacketContract) FetchRedPacketCreationDetail(hash string) (detail
 		return nil, err
 	}
 
-	coinInfo, err := cli.GetCoinMetadata(context.Background(), (resp.Certificate.Data.Transactions[0].Call.TypeArgs[0]).(string))
+	// inputs := resp.Transaction.Data.Transaction.Data.ProgrammableTransaction.Inputs
+	// println(inputs)
+	typeArgs := ""
+
+	coinInfo, err := cli.GetCoinMetadata(context.Background(), typeArgs)
 	if err != nil {
 		return nil, err
 	}
 
-	coinAmount, err := getAmountBySuiEvents(resp.Effects.Events)
+	coinAmount, err := getAmountBySuiEvents(resp.Events)
 	if err != nil {
 		return nil, err
 	}
@@ -312,18 +327,12 @@ func (c *suiRedPacketContract) EstimateGasFee(account base.Account, rpa *RedPack
 	return fee.Value, nil
 }
 
-func getAmountBySuiEvents(events []types.Event) (uint64, error) {
+func getAmountBySuiEvents(events []types.SuiEvent) (uint64, error) {
 	for _, event := range events {
-		eventMap := event.(map[string]interface{})
-		moveEvent, ok := eventMap["moveEvent"]
-		if !ok {
+		if !strings.Contains(event.Type, "RedPacketEvent") {
 			continue
 		}
-		moveEventMap := moveEvent.(map[string]interface{})
-		if !strings.Contains(moveEventMap["type"].(string), "RedPacketEvent") {
-			continue
-		}
-		fields := moveEventMap["fields"].(map[string]interface{})
+		fields := event.ParsedJson.(map[string]interface{})
 		remainBalance, err := strconv.ParseUint(fields["remain_balance"].(string), 10, 64)
 		if err != nil {
 			return 0, err
@@ -333,24 +342,24 @@ func getAmountBySuiEvents(events []types.Event) (uint64, error) {
 	return 0, errors.New("not found RedPacketEvent")
 }
 
-func toSuiBaseTransaction(hash string, resp *types.TransactionResponse) (*base.TransactionDetail, error) {
+func toSuiBaseTransaction(hash string, resp *types.SuiTransactionBlockResponse) (*base.TransactionDetail, error) {
 	var total uint64
-	if len(resp.Certificate.Data.Transactions) == 0 {
-		return nil, errors.New("invalid transaction")
-	}
 
-	toAddress := resp.Certificate.Data.Transactions[0].Call.Package.String()
+	inputs := resp.Transaction.Data.Transaction.Data.ProgrammableTransaction.Inputs
+	println(inputs)
+
+	toAddress := "" // todo
 
 	detail := &base.TransactionDetail{
 		HashString:      hash,
-		FromAddress:     resp.Certificate.Data.Sender.String(),
+		FromAddress:     resp.Transaction.Data.Sender.String(),
 		ToAddress:       toAddress,
 		Amount:          strconv.FormatUint(total, 10),
 		EstimateFees:    strconv.FormatUint(resp.Effects.GasFee(), 10),
-		FinishTimestamp: int64(resp.TimestampMs / 1000),
+		FinishTimestamp: int64(*resp.TimestampMs / 1000),
 	}
 	status := resp.Effects.Status
-	if status.Status == types.TransactionStatusSuccess {
+	if status.Status == types.ExecutionStatusSuccess {
 		detail.Status = base.TransactionStatusSuccess
 	} else {
 		detail.Status = base.TransactionStatusFailure

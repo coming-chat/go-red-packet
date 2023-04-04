@@ -8,28 +8,27 @@ import (
 )
 
 const (
-	// devNetUrl = "https://fullnode.devnet.sui.io"
-	devNetUrl    = "https://wallet-rpc.devnet.sui.io/"
 	tokenAddress = "0x2::sui::SUI"
 )
 
 func main() {
-	chain := sui.NewChainWithRpcUrl(devNetUrl)
+	rpcUrl := os.Getenv("rpc")
+	chain := sui.NewChainWithRpcUrl(rpcUrl)
 	account, err := sui.AccountWithPrivateKey(os.Getenv("private"))
 	if err != nil {
 		panic(err)
 	}
-	redpacketPackageId := "0xa18d087873b719be07b3e24506ec260d1fed88d7"
+	redpacketPackageId := "0xb0bf0468d3f0225d0b2011f1c485daac2c4543b11f35023aae7d3a1f64a3c2c6"
 	contract, err := redpacket.NewRedPacketContract(redpacket.ChainTypeSui, chain, redpacketPackageId, &redpacket.ContractConfig{
-		SuiConfigAddress: "0xba6780a9a4701cb00b979a3393a189e8adf51022",
+		SuiConfigAddress: "0x2a23d0d7f993609d8e8c0af87d39635f9ed03cb2d19065464c5c57052ebc751b",
 	})
 	if err != nil {
 		panic(err)
 	}
-	// action, err := redpacket.NewRedPacketActionCreate(tokenAddress, 5, "100000")
-	// if err != nil {
-	// 	panic(err)
-	// }
+	action, err := redpacket.NewRedPacketActionCreate(tokenAddress, 5, "100000")
+	if err != nil {
+		panic(err)
+	}
 	// action, err := redpacket.NewSuiRedpacketActionOpen(tokenAddress, "0x58f22d673e21a90d99511ffbb28c854c415c3255", []string{
 	// 	account.Address(),
 	// 	account.Address(),
@@ -43,10 +42,10 @@ func main() {
 	// 	"20000",
 	// 	"17500",
 	// })
-	action, err := redpacket.NewSuiRedPacketActionClose(tokenAddress, "0x58f22d673e21a90d99511ffbb28c854c415c3255", "", "")
-	if err != nil {
-		panic(err)
-	}
+	// action, err := redpacket.NewSuiRedPacketActionClose(tokenAddress, "0x58f22d673e21a90d99511ffbb28c854c415c3255", "", "")
+	// if err != nil {
+	// 	panic(err)
+	// }
 	gasFee, err := contract.EstimateGasFee(account, action)
 	if err != nil {
 		panic(err)
