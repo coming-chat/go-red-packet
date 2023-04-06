@@ -18,6 +18,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	println(account.Address())
 	redpacketPackageId := "0xb0bf0468d3f0225d0b2011f1c485daac2c4543b11f35023aae7d3a1f64a3c2c6"
 	contract, err := redpacket.NewRedPacketContract(redpacket.ChainTypeSui, chain, redpacketPackageId, &redpacket.ContractConfig{
 		SuiConfigAddress: "0x2a23d0d7f993609d8e8c0af87d39635f9ed03cb2d19065464c5c57052ebc751b",
@@ -55,11 +56,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// txHash := "EXEVapW35HnhtyJ7htwhMwW9a3KQsnn7h6oZ97SXahRD"
+	// txHash := "G9QJrcBZsRPVE7vxBWduuUGRahakV6MWcHSUNppDhmsG"
+	// println(txHash)
 	txDetail, err := contract.FetchRedPacketCreationDetail(txHash)
 	if err != nil {
 		panic(err)
 	}
-	println(txHash)
 	println(txDetail.Status)
 }

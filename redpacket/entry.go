@@ -34,7 +34,7 @@ func NewRedPacketContract(chainType string, chain base.Chain, contractAddress st
 			return nil, errors.New("invalid chain object")
 		}
 	case ChainTypeSui:
-		if suiChain, ok := chain.(sui.IChain); ok {
+		if suiChain, ok := chain.(*sui.Chain); ok {
 			return NewSuiRedPacketContract(suiChain, contractAddress, config)
 		} else {
 			return nil, errors.New("invalid chain object")

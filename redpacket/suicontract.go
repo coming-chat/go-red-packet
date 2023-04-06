@@ -2,7 +2,6 @@ package redpacket
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -17,20 +16,20 @@ import (
 
 const (
 	SuiDecimal   = 9
-	suiGasBudget = 10000
+	suiGasBudget = sui.MaxGasBudget
 
 	suiPackage     = "red_packet"
 	suiCoinAddress = "0x2::sui::SUI"
 )
 
 type suiRedPacketContract struct {
-	chain        sui.IChain
+	chain        *sui.Chain
 	address      string
 	packageIdHex types.HexData
 	configHex    types.HexData
 }
 
-func NewSuiRedPacketContract(chain sui.IChain, contractAddress string, config *ContractConfig) (RedPacketContract, error) {
+func NewSuiRedPacketContract(chain *sui.Chain, contractAddress string, config *ContractConfig) (RedPacketContract, error) {
 	address := "0x" + strings.TrimPrefix(contractAddress, "0x")
 	configHex, err := types.NewHexData(config.SuiConfigAddress)
 	if err != nil {
@@ -63,16 +62,11 @@ func (c *suiRedPacketContract) SendTransaction(account base.Account, rpa *RedPac
 	if err != nil {
 		return "", err
 	}
-	bytes, err := json.Marshal(signedTxn)
-	if err != nil {
-		return "", err
-	}
-	txnString := types.Bytes(bytes).GetBase64Data().String()
-	return c.chain.SendRawTransaction(txnString)
+	return c.chain.SendRawTransaction(signedTxn.Value)
 }
 
 func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketAction) (*sui.Transaction, error) {
-	cli, err := c.chain.GetClient()
+	cli, err := c.chain.Client()
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +251,7 @@ func (c *suiRedPacketContract) pickCoinsAndGas(cli *client.Client, account base.
 func (c *suiRedPacketContract) FetchRedPacketCreationDetail(hash string) (detail *RedPacketDetail, err error) {
 	defer base.CatchPanicAndMapToBasicError(&err)
 
-	cli, err := c.chain.GetClient()
+	cli, err := c.chain.Client()
 	if err != nil {
 		return nil, err
 	}
@@ -269,16 +263,12 @@ func (c *suiRedPacketContract) FetchRedPacketCreationDetail(hash string) (detail
 	if err != nil {
 		return nil, err
 	}
-	baseTransaction, err := toSuiBaseTransaction(hash, resp)
+	coinType, baseTransaction, err := toSuiBaseTransaction(hash, resp)
 	if err != nil {
 		return nil, err
 	}
 
-	// inputs := resp.Transaction.Data.Transaction.Data.ProgrammableTransaction.Inputs
-	// println(inputs)
-	typeArgs := ""
-
-	coinInfo, err := cli.GetCoinMetadata(context.Background(), typeArgs)
+	coinInfo, err := cli.GetCoinMetadata(context.Background(), coinType)
 	if err != nil {
 		return nil, err
 	}
@@ -342,21 +332,48 @@ func getAmountBySuiEvents(events []types.SuiEvent) (uint64, error) {
 	return 0, errors.New("not found RedPacketEvent")
 }
 
-func toSuiBaseTransaction(hash string, resp *types.SuiTransactionBlockResponse) (*base.TransactionDetail, error) {
-	var total uint64
+func toSuiBaseTransaction(hash string, resp *types.SuiTransactionBlockResponse) (string, *base.TransactionDetail, error) {
+	var coinType string
+	if nil == resp.Transaction {
+		return coinType, nil, errors.New("not found transaction")
+	}
+	if nil == resp.Transaction.Data.Transaction.Data.ProgrammableTransaction {
+		return coinType, nil, errors.New("not programmable transaction")
+	}
 
-	inputs := resp.Transaction.Data.Transaction.Data.ProgrammableTransaction.Inputs
-	println(inputs)
+	programmableTransaction := resp.Transaction.Data.Transaction.Data.ProgrammableTransaction
+	inputs := programmableTransaction.Inputs
+	if len(inputs) < 4 {
+		return coinType, nil, errors.New("invalid input args")
+	}
+	inputCoinAmount := inputs[3].(map[string]interface{})["value"].(string)
 
-	toAddress := "" // todo
+	var toAddress string
+	for _, command := range programmableTransaction.Commands {
+		moveCallCommand := command.(map[string]interface{})
+		if moveCallData, ok := moveCallCommand["MoveCall"]; ok {
+			moveCallMap := moveCallData.(map[string]interface{})
+			toAddress = moveCallMap["package"].(string)
+			typeArgs := moveCallMap["type_arguments"].([]interface{})
+			if len(typeArgs) == 0 {
+				return coinType, nil, errors.New("invalid type args")
+			}
+			coinType = typeArgs[0].(string)
+		}
+	}
+	if toAddress == "" {
+		return coinType, nil, errors.New("invalid to package address")
+	}
 
 	detail := &base.TransactionDetail{
-		HashString:      hash,
-		FromAddress:     resp.Transaction.Data.Sender.String(),
-		ToAddress:       toAddress,
-		Amount:          strconv.FormatUint(total, 10),
-		EstimateFees:    strconv.FormatUint(resp.Effects.GasFee(), 10),
-		FinishTimestamp: int64(*resp.TimestampMs / 1000),
+		HashString:   hash,
+		FromAddress:  resp.Transaction.Data.Sender.String(),
+		ToAddress:    toAddress,
+		Amount:       inputCoinAmount,
+		EstimateFees: strconv.FormatUint(resp.Effects.GasFee(), 10),
+	}
+	if resp.TimestampMs != nil {
+		detail.FinishTimestamp = int64(*resp.TimestampMs / 1000)
 	}
 	status := resp.Effects.Status
 	if status.Status == types.ExecutionStatusSuccess {
@@ -365,5 +382,5 @@ func toSuiBaseTransaction(hash string, resp *types.SuiTransactionBlockResponse) 
 		detail.Status = base.TransactionStatusFailure
 		detail.FailureMessage = status.Error
 	}
-	return detail, nil
+	return coinType, detail, nil
 }
