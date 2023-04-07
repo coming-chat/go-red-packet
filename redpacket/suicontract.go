@@ -346,7 +346,10 @@ func toSuiBaseTransaction(hash string, resp *types.SuiTransactionBlockResponse) 
 	if len(inputs) < 4 {
 		return coinType, nil, errors.New("invalid input args")
 	}
-	inputCoinAmount := inputs[3].(map[string]interface{})["value"].(string)
+
+	// inputs coins 如果是多个，则 inputs 数量比实际参数数量多
+	// amount 参数位置在最后一个，需要从最后一个取
+	inputCoinAmount := inputs[len(inputs)-1].(map[string]interface{})["value"].(string)
 
 	var toAddress string
 	for _, command := range programmableTransaction.Commands {

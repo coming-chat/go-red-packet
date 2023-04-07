@@ -26,10 +26,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	action, err := redpacket.NewRedPacketActionCreate(tokenAddress, 5, "100000")
-	if err != nil {
-		panic(err)
-	}
+	// action, err := redpacket.NewRedPacketActionCreate(tokenAddress, 5, "100000")
+	// if err != nil {
+	// 	panic(err)
+	// }
 	// action, err := redpacket.NewSuiRedpacketActionOpen(tokenAddress, "0x58f22d673e21a90d99511ffbb28c854c415c3255", []string{
 	// 	account.Address(),
 	// 	account.Address(),
@@ -47,17 +47,17 @@ func main() {
 	// if err != nil {
 	// 	panic(err)
 	// }
-	gasFee, err := contract.EstimateGasFee(account, action)
-	if err != nil {
-		panic(err)
-	}
-	println(gasFee)
-	txHash, err := contract.SendTransaction(account, action)
-	if err != nil {
-		panic(err)
-	}
-	// txHash := "G9QJrcBZsRPVE7vxBWduuUGRahakV6MWcHSUNppDhmsG"
-	// println(txHash)
+	// gasFee, err := contract.EstimateGasFee(account, action)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// println(gasFee)
+	// txHash, err := contract.SendTransaction(account, action)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	txHash := "GCZsXn8qpDsuadYbFGiunM45CWzZZ3YoM6tRjne9b37s"
+	println(txHash)
 	txDetail, err := contract.FetchRedPacketCreationDetail(txHash)
 	if err != nil {
 		panic(err)
