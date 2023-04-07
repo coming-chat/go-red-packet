@@ -20,6 +20,8 @@ const (
 
 	suiPackage     = "red_packet"
 	suiCoinAddress = "0x2::sui::SUI"
+
+	suiFeePoint = 250
 )
 
 type suiRedPacketContract struct {
@@ -76,7 +78,14 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 	}
 	switch rpa.Method {
 	case RPAMethodCreate:
-		coins, gas, err := c.pickCoinsAndGas(cli, account, rpa)
+		amount, err := strconv.ParseUint(rpa.CreateParams.Amount, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("amount params is not uint64")
+		}
+		amountTotal := calcTotal(amount, suiFeePoint)
+		amountTotalStr := strconv.FormatUint(amountTotal, 10)
+
+		coins, gas, err := c.pickCoinsAndGas(cli, account, rpa.CreateParams.TokenAddress, amountTotalStr, true)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +93,7 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 			c.configHex,
 			coins,
 			strconv.Itoa(rpa.CreateParams.Count),
-			rpa.CreateParams.Amount,
+			amountTotalStr,
 		}
 		tx, err := cli.MoveCall(
 			context.Background(),
@@ -198,10 +207,10 @@ func (c *suiRedPacketContract) pickGas(cli *client.Client, account base.Account,
 	return &gasCoin.Reference().ObjectId, nil
 }
 
-func (c *suiRedPacketContract) pickCoinsAndGas(cli *client.Client, account base.Account, rpa *RedPacketAction) ([]types.ObjectId, *types.ObjectId, error) {
+func (c *suiRedPacketContract) pickCoinsAndGas(cli *client.Client, account base.Account, token, amount string, firstTry bool) ([]types.ObjectId, *types.ObjectId, error) {
 	ctx := context.Background()
 	addressHex, _ := types.NewHexData(account.Address())
-	allCoinsStruct, err := cli.GetCoins(ctx, *addressHex, &rpa.CreateParams.TokenAddress, nil, 100)
+	allCoinsStruct, err := cli.GetCoins(ctx, *addressHex, &token, nil, 100)
 	allCoins := make(types.Coins, 0)
 	for _, coin := range allCoinsStruct.Data {
 		allCoins = append(allCoins, coin)
@@ -210,7 +219,7 @@ func (c *suiRedPacketContract) pickCoinsAndGas(cli *client.Client, account base.
 		return nil, nil, err
 	}
 
-	amountBig, b := big.NewInt(0).SetString(rpa.CreateParams.Amount, 10)
+	amountBig, b := big.NewInt(0).SetString(amount, 10)
 	var (
 		coins   types.Coins
 		gasCoin *types.Coin
@@ -218,9 +227,11 @@ func (c *suiRedPacketContract) pickCoinsAndGas(cli *client.Client, account base.
 	if !b {
 		return nil, nil, errors.New("invalid amount")
 	}
-	if rpa.CreateParams.TokenAddress == suiCoinAddress {
-		coins, gasCoin, err = allCoins.PickSUICoinsWithGas(amountBig, suiGasBudget, types.PickSmaller)
+	if token == suiCoinAddress {
+		// pickBigger 用于给用于保留一些 smaller sui coin 作为 gas
+		coins, gasCoin, err = allCoins.PickSUICoinsWithGas(amountBig, suiGasBudget, types.PickBigger)
 		if err != nil {
+
 			return nil, nil, err
 		}
 	} else {
@@ -232,7 +243,7 @@ func (c *suiRedPacketContract) pickCoinsAndGas(cli *client.Client, account base.
 		if err != nil {
 			return nil, nil, err
 		}
-		amountU64, err := strconv.ParseUint(rpa.CreateParams.Amount, 10, 64)
+		amountU64, err := strconv.ParseUint(amount, 10, 64)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -298,7 +309,7 @@ func (c *suiRedPacketContract) EstimateFee(rpa *RedPacketAction) (string, error)
 		if err != nil {
 			return "", err
 		}
-		total := calcTotal(amount, 250)
+		total := calcTotal(amount, suiFeePoint)
 		return strconv.FormatUint(total-amount, 10), nil
 	default:
 		return "", errors.New("method invalid")
