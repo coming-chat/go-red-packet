@@ -231,7 +231,9 @@ func (c *suiRedPacketContract) pickCoinsAndGas(cli *client.Client, account base.
 		// pickBigger 用于给用于保留一些 smaller sui coin 作为 gas
 		coins, gasCoin, err = allCoins.PickSUICoinsWithGas(amountBig, suiGasBudget, types.PickBigger)
 		if err != nil {
-
+			if firstTry && c.trySplitGasCoin(cli, account, amount, allCoins) {
+				return c.pickCoinsAndGas(cli, account, token, amount, false)
+			}
 			return nil, nil, err
 		}
 	} else {
@@ -257,6 +259,54 @@ func (c *suiRedPacketContract) pickCoinsAndGas(cli *client.Client, account base.
 		coinObjs[i] = coins[i].Reference().ObjectId
 	}
 	return coinObjs, &gasCoin.Reference().ObjectId, nil
+}
+
+func (c *suiRedPacketContract) trySplitGasCoin(cli *client.Client, account base.Account, amount string, allCoins types.Coins) bool {
+	// if total coins balance < amount+gas, no split, return false
+	amountBig, b := big.NewInt(0).SetString(amount, 10)
+	if !b {
+		return false
+	}
+	amountBig = amountBig.Add(amountBig, big.NewInt(int64(suiGasBudget)))
+	totalBalance := big.NewInt(0)
+	for _, coin := range allCoins {
+		totalBalance = totalBalance.Add(totalBalance, big.NewInt(coin.Balance))
+	}
+	if amountBig.Cmp(totalBalance) > 0 {
+		return false
+	}
+
+	// pick a coin to split gas
+	coin, err := allCoins.PickCoinNoLess(suiGasBudget)
+	if err != nil {
+		return false
+	}
+
+	// create a split coins transaction
+	address, err := types.NewAddressFromHex(account.Address())
+	if err != nil {
+		return false
+	}
+	txBytes, err := cli.TransferSui(context.Background(), *address, *address, coin.Reference().ObjectId, suiGasBudget, suiGasBudget)
+	if err != nil {
+		return false
+	}
+	tx := sui.Transaction{
+		Txn:          *txBytes,
+		MaxGasBudget: suiGasBudget,
+	}
+
+	suiAccount, ok := account.(*sui.Account)
+	if !ok {
+		return false
+	}
+
+	signedTxn, err := tx.SignWithAccount(suiAccount)
+	if err != nil {
+		return false
+	}
+	_, err = c.chain.SendRawTransaction(signedTxn.Value)
+	return err == nil
 }
 
 func (c *suiRedPacketContract) FetchRedPacketCreationDetail(hash string) (detail *RedPacketDetail, err error) {
