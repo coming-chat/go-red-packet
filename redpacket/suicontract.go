@@ -24,6 +24,12 @@ const (
 	suiFeePoint = 250
 )
 
+var suiGasBudgetData types.SafeSuiBigInt[uint64]
+
+func init() {
+	suiGasBudgetData = types.NewSafeSuiBigInt(uint64(suiGasBudget))
+}
+
 type suiRedPacketContract struct {
 	chain        *sui.Chain
 	address      string
@@ -104,7 +110,7 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 			[]string{rpa.CreateParams.TokenAddress},
 			args,
 			gas,
-			suiGasBudget,
+			suiGasBudgetData,
 		)
 		if err != nil {
 			return nil, err
@@ -146,7 +152,7 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 			[]string{rpa.OpenParams.TokenAddress},
 			args,
 			gas,
-			suiGasBudget,
+			suiGasBudgetData,
 		)
 		if err != nil {
 			return nil, err
@@ -179,7 +185,7 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 			[]string{rpa.CloseParams.TokenAddress},
 			args,
 			gas,
-			suiGasBudget,
+			suiGasBudgetData,
 		)
 		if err != nil {
 			return nil, err
@@ -270,7 +276,7 @@ func (c *suiRedPacketContract) trySplitGasCoin(cli *client.Client, account base.
 	amountBig = amountBig.Add(amountBig, big.NewInt(int64(suiGasBudget)))
 	totalBalance := big.NewInt(0)
 	for _, coin := range allCoins {
-		totalBalance = totalBalance.Add(totalBalance, big.NewInt(coin.Balance))
+		totalBalance = totalBalance.Add(totalBalance, big.NewInt(coin.Balance.Int64()))
 	}
 	if amountBig.Cmp(totalBalance) > 0 {
 		return false
@@ -287,7 +293,7 @@ func (c *suiRedPacketContract) trySplitGasCoin(cli *client.Client, account base.
 	if err != nil {
 		return false
 	}
-	txBytes, err := cli.TransferSui(context.Background(), *address, *address, coin.Reference().ObjectId, suiGasBudget, suiGasBudget)
+	txBytes, err := cli.TransferSui(context.Background(), *address, *address, coin.Reference().ObjectId, suiGasBudgetData, suiGasBudgetData)
 	if err != nil {
 		return false
 	}
@@ -398,11 +404,14 @@ func toSuiBaseTransaction(hash string, resp *types.SuiTransactionBlockResponse) 
 	if nil == resp.Transaction {
 		return coinType, nil, errors.New("not found transaction")
 	}
-	if nil == resp.Transaction.Data.Transaction.Data.ProgrammableTransaction {
+	if nil == resp.Transaction.Data.Data.V1 {
+		return coinType, nil, errors.New("not programmable transaction")
+	}
+	programmableTransaction := resp.Transaction.Data.Data.V1.Transaction.Data.ProgrammableTransaction
+	if nil == programmableTransaction {
 		return coinType, nil, errors.New("not programmable transaction")
 	}
 
-	programmableTransaction := resp.Transaction.Data.Transaction.Data.ProgrammableTransaction
 	inputs := programmableTransaction.Inputs
 	if len(inputs) < 4 {
 		return coinType, nil, errors.New("invalid input args")
@@ -429,17 +438,20 @@ func toSuiBaseTransaction(hash string, resp *types.SuiTransactionBlockResponse) 
 		return coinType, nil, errors.New("invalid to package address")
 	}
 
+	gasUsed := resp.Effects.Data.V1.GasUsed
+	totalGas := gasUsed.ComputationCost.Uint64() + gasUsed.StorageCost.Uint64() - gasUsed.StorageRebate.Uint64()
+
 	detail := &base.TransactionDetail{
 		HashString:   hash,
-		FromAddress:  resp.Transaction.Data.Sender.String(),
+		FromAddress:  resp.Transaction.Data.Data.V1.Sender.String(),
 		ToAddress:    toAddress,
 		Amount:       inputCoinAmount,
-		EstimateFees: strconv.FormatUint(resp.Effects.GasFee(), 10),
+		EstimateFees: strconv.FormatUint(totalGas, 10),
 	}
 	if resp.TimestampMs != nil {
-		detail.FinishTimestamp = int64(*resp.TimestampMs / 1000)
+		detail.FinishTimestamp = int64(resp.TimestampMs.Uint64() / 1000)
 	}
-	status := resp.Effects.Status
+	status := resp.Effects.Data.V1.Status
 	if status.Status == types.ExecutionStatusSuccess {
 		detail.Status = base.TransactionStatusSuccess
 	} else {

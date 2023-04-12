@@ -4,9 +4,9 @@ go 1.18
 
 require (
 	github.com/coming-chat/go-aptos v0.0.0-20230225124212-15dba2e4eeb3
-	github.com/coming-chat/go-sui v0.0.0-20230406073331-ade1920055fa
+	github.com/coming-chat/go-sui v0.0.0-20230412035233-605c15c798fc
 	github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf
-	github.com/coming-chat/wallet-SDK v0.2.7-0.20230406075945-7a5b2f5a235e
+	github.com/coming-chat/wallet-SDK v0.2.7-0.20230412035538-6ae175605797
 	github.com/ethereum/go-ethereum v1.10.18
 )
 

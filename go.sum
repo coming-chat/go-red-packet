@@ -117,6 +117,8 @@ github.com/coming-chat/go-sui v0.0.0-20230406040721-8682dfd06c63 h1:q9IkS4l985Kj
 github.com/coming-chat/go-sui v0.0.0-20230406040721-8682dfd06c63/go.mod h1:s5DRgrUeaPfWULPP3+OcUaBdRIVkq7W1PrQKNr7D5ag=
 github.com/coming-chat/go-sui v0.0.0-20230406073331-ade1920055fa h1:Lv15ebcm/hCViuoqTPs3xtKjKz9TvUrgMA2rTmFDF/Y=
 github.com/coming-chat/go-sui v0.0.0-20230406073331-ade1920055fa/go.mod h1:s5DRgrUeaPfWULPP3+OcUaBdRIVkq7W1PrQKNr7D5ag=
+github.com/coming-chat/go-sui v0.0.0-20230412035233-605c15c798fc h1:zo5M7l0lESWxdTARc/Sdbypor3uSn0C+PS+WCz6Zr3M=
+github.com/coming-chat/go-sui v0.0.0-20230412035233-605c15c798fc/go.mod h1:s5DRgrUeaPfWULPP3+OcUaBdRIVkq7W1PrQKNr7D5ag=
 github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf h1:HrK16SFZnoxATieE+UHFSHZ6D2+XApv9g752MgvW7es=
 github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf/go.mod h1:CVVNl2j3TGYyUjuux+oYrRenPGvD+5UQbPGYp/zUews=
 github.com/coming-chat/wallet-SDK v0.2.7-0.20230404094234-817806acd7b6 h1:5iaTsoi2Tzm8hllTtD28I+smUZvcZo+nTSMOTRl7B/k=
@@ -133,6 +135,8 @@ github.com/coming-chat/wallet-SDK v0.2.7-0.20230406072313-9ac58fa14f5d h1:Oz+LRp
 github.com/coming-chat/wallet-SDK v0.2.7-0.20230406072313-9ac58fa14f5d/go.mod h1:fMJKzZZ3Y7Kw6uDpzdqrSs8MbJyxtyAF3Cag9NSJHpg=
 github.com/coming-chat/wallet-SDK v0.2.7-0.20230406075945-7a5b2f5a235e h1:yL1qU+9/Uopw1V/DJ/GMZ1jSJ2GbmmtHBLnBuYvkOpY=
 github.com/coming-chat/wallet-SDK v0.2.7-0.20230406075945-7a5b2f5a235e/go.mod h1:yiTbYiCN5N1cLM+El29reLhiSr3tR0g7e5AiD7sQPMk=
+github.com/coming-chat/wallet-SDK v0.2.7-0.20230412035538-6ae175605797 h1:vG1cImadGjhTZxUnI+Ol9cjXegWzXz2IFyfJsCYYyHU=
+github.com/coming-chat/wallet-SDK v0.2.7-0.20230412035538-6ae175605797/go.mod h1:orbOOizCGZVRJkKaSoTsZmGZ2ta+syFLQNidhtEQ6lY=
 github.com/consensys/bavard v0.1.8-0.20210406032232-f3452dc9b572/go.mod h1:Bpd0/3mZuaj6Sj+PqrmIquiOKy397AKGThQPaGzNXAQ=
 github.com/consensys/gnark-crypto v0.4.1-0.20210426202927-39ac3d4b3f1f/go.mod h1:815PAHg3wvysy0SyIqanF8gZ0Y1wjk/hrDHD/iT88+Q=
 github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d/go.mod h1:tSxLoYXyBmiFeKpvmq4dzayMdCjCnu8uqmCysIGBT2Y=
