@@ -216,103 +216,20 @@ func (c *suiRedPacketContract) pickGas(cli *client.Client, account base.Account,
 func (c *suiRedPacketContract) pickCoinsAndGas(cli *client.Client, account base.Account, token, amount string, firstTry bool) ([]types.ObjectId, *types.ObjectId, error) {
 	ctx := context.Background()
 	addressHex, _ := types.NewHexData(account.Address())
-	allCoinsStruct, err := cli.GetCoins(ctx, *addressHex, &token, nil, 100)
-	allCoins := make(types.Coins, 0)
-	for _, coin := range allCoinsStruct.Data {
-		allCoins = append(allCoins, coin)
+	amountInt, ok := big.NewInt(0).SetString(amount, 10)
+	if !ok {
+		return nil, nil, errors.New("amount is not a number")
 	}
+	allCoinsStruct, err := cli.GetCoins(ctx, *addressHex, &token, nil, 100)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	amountBig, b := big.NewInt(0).SetString(amount, 10)
-	var (
-		coins   types.Coins
-		gasCoin *types.Coin
-	)
-	if !b {
-		return nil, nil, errors.New("invalid amount")
-	}
-	if token == suiCoinAddress {
-		// pickBigger 用于给用于保留一些 smaller sui coin 作为 gas
-		coins, gasCoin, err = allCoins.PickSUICoinsWithGas(amountBig, suiGasBudget, types.PickBigger)
-		if err != nil {
-			if firstTry && c.trySplitGasCoin(cli, account, amount, allCoins) {
-				return c.pickCoinsAndGas(cli, account, token, amount, false)
-			}
-			return nil, nil, err
-		}
-	} else {
-		coins, err = allCoins.PickCoins(amountBig, types.PickSmaller)
-		if err != nil {
-			return nil, nil, err
-		}
-		suiCoins, err := cli.GetSuiCoinsOwnedByAddress(ctx, *addressHex)
-		if err != nil {
-			return nil, nil, err
-		}
-		amountU64, err := strconv.ParseUint(amount, 10, 64)
-		if err != nil {
-			return nil, nil, err
-		}
-		gasCoin, err = suiCoins.PickCoinNoLess(amountU64)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-	coinObjs := make([]types.ObjectId, len(coins))
-	for i := range coins {
-		coinObjs[i] = coins[i].Reference().ObjectId
-	}
-	return coinObjs, &gasCoin.Reference().ObjectId, nil
-}
-
-func (c *suiRedPacketContract) trySplitGasCoin(cli *client.Client, account base.Account, amount string, allCoins types.Coins) bool {
-	// if total coins balance < amount+gas, no split, return false
-	amountBig, b := big.NewInt(0).SetString(amount, 10)
-	if !b {
-		return false
-	}
-	amountBig = amountBig.Add(amountBig, big.NewInt(int64(suiGasBudget)))
-	totalBalance := big.NewInt(0)
-	for _, coin := range allCoins {
-		totalBalance = totalBalance.Add(totalBalance, big.NewInt(coin.Balance.Int64()))
-	}
-	if amountBig.Cmp(totalBalance) > 0 {
-		return false
-	}
-
-	// pick a coin to split gas
-	coin, err := allCoins.PickCoinNoLess(suiGasBudget)
+	pickedCoins, err := types.PickupCoins(allCoinsStruct, *amountInt, 100, true)
 	if err != nil {
-		return false
+		return nil, nil, err
 	}
-
-	// create a split coins transaction
-	address, err := types.NewAddressFromHex(account.Address())
-	if err != nil {
-		return false
-	}
-	txBytes, err := cli.TransferSui(context.Background(), *address, *address, coin.Reference().ObjectId, suiGasBudgetData, suiGasBudgetData)
-	if err != nil {
-		return false
-	}
-	tx := sui.Transaction{
-		Txn:          *txBytes,
-		MaxGasBudget: suiGasBudget,
-	}
-
-	suiAccount, ok := account.(*sui.Account)
-	if !ok {
-		return false
-	}
-
-	signedTxn, err := tx.SignWithAccount(suiAccount)
-	if err != nil {
-		return false
-	}
-	_, err = c.chain.SendRawTransaction(signedTxn.Value)
-	return err == nil
+	// gasCoin return nil, node will pick one from the signer's possession if not provided
+	return pickedCoins.CoinIds(), nil, nil
 }
 
 func (c *suiRedPacketContract) FetchRedPacketCreationDetail(hash string) (detail *RedPacketDetail, err error) {
