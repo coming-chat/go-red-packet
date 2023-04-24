@@ -119,6 +119,8 @@ github.com/coming-chat/go-sui v0.0.0-20230406073331-ade1920055fa h1:Lv15ebcm/hCV
 github.com/coming-chat/go-sui v0.0.0-20230406073331-ade1920055fa/go.mod h1:s5DRgrUeaPfWULPP3+OcUaBdRIVkq7W1PrQKNr7D5ag=
 github.com/coming-chat/go-sui v0.0.0-20230412035233-605c15c798fc h1:zo5M7l0lESWxdTARc/Sdbypor3uSn0C+PS+WCz6Zr3M=
 github.com/coming-chat/go-sui v0.0.0-20230412035233-605c15c798fc/go.mod h1:s5DRgrUeaPfWULPP3+OcUaBdRIVkq7W1PrQKNr7D5ag=
+github.com/coming-chat/go-sui v0.0.0-20230419074029-1ae4e17f09d4 h1:kYXEOvHRO7PjfbtvJTq1diUWXxCPBZNv6QPwcLXyp2M=
+github.com/coming-chat/go-sui v0.0.0-20230419074029-1ae4e17f09d4/go.mod h1:s5DRgrUeaPfWULPP3+OcUaBdRIVkq7W1PrQKNr7D5ag=
 github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf h1:HrK16SFZnoxATieE+UHFSHZ6D2+XApv9g752MgvW7es=
 github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf/go.mod h1:CVVNl2j3TGYyUjuux+oYrRenPGvD+5UQbPGYp/zUews=
 github.com/coming-chat/wallet-SDK v0.2.7-0.20230404094234-817806acd7b6 h1:5iaTsoi2Tzm8hllTtD28I+smUZvcZo+nTSMOTRl7B/k=

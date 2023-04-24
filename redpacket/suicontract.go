@@ -337,7 +337,15 @@ func (c *suiRedPacketContract) FetchRedPacketCreationDetail(hash string) (detail
 
 	coinInfo, err := cli.GetCoinMetadata(context.Background(), coinType)
 	if err != nil {
-		return nil, err
+		if coinType == suiCoinAddress {
+			coinInfo = &types.SuiCoinMetadata{
+				Decimals: 9,
+				Symbol:   "SUI",
+				Name:     "SUI",
+			}
+		} else {
+			return nil, err
+		}
 	}
 
 	coinAmount, err := getAmountBySuiEvents(resp.Events)
