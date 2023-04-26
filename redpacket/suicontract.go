@@ -15,20 +15,13 @@ import (
 )
 
 const (
-	SuiDecimal   = 9
-	suiGasBudget = sui.MaxGasBudget
+	SuiDecimal = 9
 
 	suiPackage     = "red_packet"
 	suiCoinAddress = "0x2::sui::SUI"
 
 	suiFeePoint = 250
 )
-
-var suiGasBudgetData types.SafeSuiBigInt[uint64]
-
-func init() {
-	suiGasBudgetData = types.NewSafeSuiBigInt(uint64(suiGasBudget))
-}
 
 type suiRedPacketContract struct {
 	chain        *sui.Chain
@@ -78,10 +71,6 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 	if err != nil {
 		return nil, err
 	}
-	addr, err := types.NewAddressFromHex(account.Address())
-	if err != nil {
-		return nil, err
-	}
 	switch rpa.Method {
 	case RPAMethodCreate:
 		amount, err := strconv.ParseUint(rpa.CreateParams.Amount, 10, 64)
@@ -91,7 +80,7 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 		amountTotal := calcTotal(amount, suiFeePoint)
 		amountTotalStr := strconv.FormatUint(amountTotal, 10)
 
-		coins, gas, err := c.pickCoinsAndGas(cli, account, rpa.CreateParams.TokenAddress, amountTotalStr, true)
+		coins, _, err := c.pickCoinsAndGas(cli, account, rpa.CreateParams.TokenAddress, amountTotalStr, true)
 		if err != nil {
 			return nil, err
 		}
@@ -101,24 +90,13 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 			strconv.Itoa(rpa.CreateParams.Count),
 			amountTotalStr,
 		}
-		tx, err := cli.MoveCall(
-			context.Background(),
-			*addr,
-			c.packageIdHex,
+		return c.chain.BaseMoveCall(
+			account.Address(),
+			c.packageIdHex.String(),
 			suiPackage,
 			"create",
 			[]string{rpa.CreateParams.TokenAddress},
-			args,
-			gas,
-			suiGasBudgetData,
-		)
-		if err != nil {
-			return nil, err
-		}
-		return &sui.Transaction{
-			Txn:          *tx,
-			MaxGasBudget: suiGasBudget,
-		}, nil
+			args)
 	case RPAMethodOpen:
 		if len(rpa.OpenParams.PacketObjectId) == 0 {
 			return nil, errors.New("invalid redPacketObjectId")
@@ -139,28 +117,14 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 			addresses,
 			rpa.OpenParams.Amounts,
 		}
-		gas, err := c.pickGas(cli, account, suiGasBudget)
-		if err != nil {
-			return nil, err
-		}
-		tx, err := cli.MoveCall(
-			context.Background(),
-			*addr,
-			c.packageIdHex,
+		return c.chain.BaseMoveCall(
+			account.Address(),
+			c.packageIdHex.String(),
 			suiPackage,
 			"open",
 			[]string{rpa.OpenParams.TokenAddress},
 			args,
-			gas,
-			suiGasBudgetData,
 		)
-		if err != nil {
-			return nil, err
-		}
-		return &sui.Transaction{
-			Txn:          *tx,
-			MaxGasBudget: suiGasBudget,
-		}, nil
 	case RPAMethodClose:
 		if len(rpa.CloseParams.PacketObjectId) == 0 {
 			return nil, errors.New("invalid redPacketObjectId")
@@ -169,48 +133,20 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 		if err != nil {
 			return nil, err
 		}
-		gas, err := c.pickGas(cli, account, suiGasBudget)
-		if err != nil {
-			return nil, err
-		}
 		args := []interface{}{
 			packetId,
 		}
-		tx, err := cli.MoveCall(
-			context.Background(),
-			*addr,
-			c.packageIdHex,
+		return c.chain.BaseMoveCall(
+			account.Address(),
+			c.packageIdHex.String(),
 			suiPackage,
 			"close",
 			[]string{rpa.CloseParams.TokenAddress},
 			args,
-			gas,
-			suiGasBudgetData,
 		)
-		if err != nil {
-			return nil, err
-		}
-		return &sui.Transaction{
-			Txn:          *tx,
-			MaxGasBudget: suiGasBudget,
-		}, nil
 	default:
 		return nil, fmt.Errorf("unsopported red packet method %s", rpa.Method)
 	}
-}
-
-func (c *suiRedPacketContract) pickGas(cli *client.Client, account base.Account, gasBudget uint64) (*types.ObjectId, error) {
-	ctx := context.Background()
-	addressHex, _ := types.NewHexData(account.Address())
-	suiCoins, err := cli.GetSuiCoinsOwnedByAddress(ctx, *addressHex)
-	if err != nil {
-		return nil, err
-	}
-	gasCoin, err := suiCoins.PickCoinNoLess(gasBudget)
-	if err != nil {
-		return nil, err
-	}
-	return &gasCoin.Reference().ObjectId, nil
 }
 
 func (c *suiRedPacketContract) pickCoinsAndGas(cli *client.Client, account base.Account, token, amount string, firstTry bool) ([]types.ObjectId, *types.ObjectId, error) {
@@ -302,11 +238,8 @@ func (c *suiRedPacketContract) EstimateGasFee(account base.Account, rpa *RedPack
 	if err != nil {
 		return "", err
 	}
-	fee, err := c.chain.EstimateGasFee(tx)
-	if err != nil {
-		return "", err
-	}
-	return fee.Value, nil
+	feeString := strconv.FormatInt(tx.EstimateGasFee, 10)
+	return feeString, nil
 }
 
 func getAmountBySuiEvents(events []types.SuiEvent) (uint64, error) {
