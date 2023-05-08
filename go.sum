@@ -111,12 +111,12 @@ github.com/cloudflare/cloudflare-go v0.10.2-0.20190916151808-a80f83b9add9/go.mod
 github.com/cloudflare/cloudflare-go v0.14.0/go.mod h1:EnwdgGMaFOruiPZRFSgn+TsQ3hQ7C/YWzIGLeu5c304=
 github.com/coming-chat/go-aptos v0.0.0-20230225124212-15dba2e4eeb3 h1:USfRA9kf44qDSETNvLY/yKHOdU7aQVf+pkshdHKClkk=
 github.com/coming-chat/go-aptos v0.0.0-20230225124212-15dba2e4eeb3/go.mod h1:byZxzNOokbO5/mGYTztPhKMUwBnFjn0Tj0bpieocv6I=
-github.com/coming-chat/go-sui v0.0.0-20230505070300-1ae6da16e1bc h1:ees1cymuYHP+fZbtUa89jbz9FdgU8Uu09ii3n5KtS0U=
-github.com/coming-chat/go-sui v0.0.0-20230505070300-1ae6da16e1bc/go.mod h1:s5DRgrUeaPfWULPP3+OcUaBdRIVkq7W1PrQKNr7D5ag=
+github.com/coming-chat/go-sui v0.0.0-20230508102747-0f751dbeeeb3 h1:kkl6PLTTmu53v1YHye9TA0cU9Ot1PZWXQ753JX1Ul8M=
+github.com/coming-chat/go-sui v0.0.0-20230508102747-0f751dbeeeb3/go.mod h1:s5DRgrUeaPfWULPP3+OcUaBdRIVkq7W1PrQKNr7D5ag=
 github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf h1:HrK16SFZnoxATieE+UHFSHZ6D2+XApv9g752MgvW7es=
 github.com/coming-chat/lcs v0.0.0-20220829063658-0fa8432d2bdf/go.mod h1:CVVNl2j3TGYyUjuux+oYrRenPGvD+5UQbPGYp/zUews=
-github.com/coming-chat/wallet-SDK v0.2.7-0.20230505072404-bbf37062a401 h1:Om2xJ5w2IEDvDnAtqqqC7T/uVR5RygF4r2gdje1Pjzw=
-github.com/coming-chat/wallet-SDK v0.2.7-0.20230505072404-bbf37062a401/go.mod h1:YXkZR+e42ru1HA9oObeUdml6Ln8kk6KyXw0VBuZSSBg=
+github.com/coming-chat/wallet-SDK v0.2.7-0.20230508120144-a3a244e4ba57 h1:STeiGnhalb68Q/MilQ1crt9IFFFLvZ2MaKMvdx6DI2Q=
+github.com/coming-chat/wallet-SDK v0.2.7-0.20230508120144-a3a244e4ba57/go.mod h1:Q5K8f01SZMSy+xeBvhBPTehKOnsoC1CcCKJlDyid3ok=
 github.com/consensys/bavard v0.1.8-0.20210406032232-f3452dc9b572/go.mod h1:Bpd0/3mZuaj6Sj+PqrmIquiOKy397AKGThQPaGzNXAQ=
 github.com/consensys/gnark-crypto v0.4.1-0.20210426202927-39ac3d4b3f1f/go.mod h1:815PAHg3wvysy0SyIqanF8gZ0Y1wjk/hrDHD/iT88+Q=
 github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d/go.mod h1:tSxLoYXyBmiFeKpvmq4dzayMdCjCnu8uqmCysIGBT2Y=

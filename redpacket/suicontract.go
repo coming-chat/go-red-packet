@@ -96,7 +96,7 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 			suiPackage,
 			"create",
 			[]string{rpa.CreateParams.TokenAddress},
-			args)
+			args, 0)
 	case RPAMethodOpen:
 		if len(rpa.OpenParams.PacketObjectId) == 0 {
 			return nil, errors.New("invalid redPacketObjectId")
@@ -124,6 +124,7 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 			"open",
 			[]string{rpa.OpenParams.TokenAddress},
 			args,
+			0,
 		)
 	case RPAMethodClose:
 		if len(rpa.CloseParams.PacketObjectId) == 0 {
@@ -143,6 +144,7 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 			"close",
 			[]string{rpa.CloseParams.TokenAddress},
 			args,
+			0,
 		)
 	default:
 		return nil, fmt.Errorf("unsopported red packet method %s", rpa.Method)
@@ -160,7 +162,7 @@ func (c *suiRedPacketContract) pickCoinsAndGas(cli *client.Client, account base.
 	if err != nil {
 		return nil, nil, err
 	}
-	pickedCoins, err := types.PickupCoins(allCoinsStruct, *amountInt, 100, true)
+	pickedCoins, err := types.PickupCoins(allCoinsStruct, *amountInt, 100, sui.MinGasBudget)
 	if err != nil {
 		return nil, nil, err
 	}
