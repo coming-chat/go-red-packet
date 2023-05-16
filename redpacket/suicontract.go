@@ -8,10 +8,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/coming-chat/go-sui/client"
-	"github.com/coming-chat/go-sui/types"
+	"github.com/coming-chat/go-sui/v2/lib"
+	"github.com/coming-chat/go-sui/v2/move_types"
+	"github.com/coming-chat/go-sui/v2/sui_types"
+	"github.com/coming-chat/go-sui/v2/types"
 	"github.com/coming-chat/wallet-SDK/core/base"
 	"github.com/coming-chat/wallet-SDK/core/sui"
+	"github.com/fardream/go-bcs/bcs"
 )
 
 const (
@@ -26,17 +29,17 @@ const (
 type suiRedPacketContract struct {
 	chain        *sui.Chain
 	address      string
-	packageIdHex types.HexData
-	configHex    types.HexData
+	packageIdHex sui_types.SuiAddress
+	configHex    sui_types.ObjectID
 }
 
 func NewSuiRedPacketContract(chain *sui.Chain, contractAddress string, config *ContractConfig) (RedPacketContract, error) {
 	address := "0x" + strings.TrimPrefix(contractAddress, "0x")
-	configHex, err := types.NewHexData(config.SuiConfigAddress)
+	pkgId, err := sui_types.NewAddressFromHex(address)
 	if err != nil {
 		return nil, err
 	}
-	pkgId, err := types.NewHexData(address)
+	configHex, err := sui_types.NewObjectIdFromHex(config.SuiConfigAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -71,6 +74,37 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 	if err != nil {
 		return nil, err
 	}
+
+	tokenAddress := rpa.TokenAddress()
+	resourceType, err := types.NewResourceType(tokenAddress)
+	if err != nil {
+		return nil, err
+	}
+	typeTag := move_types.StructTag{
+		Address: *resourceType.Address,
+		Module:  move_types.Identifier(resourceType.ModuleName),
+		Name:    move_types.Identifier(resourceType.FuncName),
+	}
+	configObject, err := cli.GetObject(context.Background(), c.configHex, &types.SuiObjectDataOptions{
+		ShowOwner: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if configObject.Data == nil || configObject.Data.Owner == nil || configObject.Data.Owner.Shared == nil || configObject.Data.Owner.Shared.InitialSharedVersion == nil {
+		return nil, errors.New("invalid shared config address")
+	}
+	configCallArg := sui_types.ObjectArg{SharedObject: &struct {
+		Id                   move_types.AccountAddress
+		InitialSharedVersion uint64
+		Mutable              bool
+	}{
+		Id:                   c.configHex,
+		InitialSharedVersion: *configObject.Data.Owner.Shared.InitialSharedVersion,
+		Mutable:              true,
+	}}
+
+	sender, _ := sui_types.NewAddressFromHex(account.Address())
 	switch rpa.Method {
 	case RPAMethodCreate:
 		amount, err := strconv.ParseUint(rpa.CreateParams.Amount, 10, 64)
@@ -78,36 +112,117 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 			return nil, fmt.Errorf("amount params is not uint64")
 		}
 		amountTotal := calcTotal(amount, suiFeePoint)
-		amountTotalStr := strconv.FormatUint(amountTotal, 10)
 
-		coins, _, err := c.pickCoinsAndGas(cli, account, rpa.CreateParams.TokenAddress, amountTotalStr, true)
+		coins, err := cli.GetCoins(context.Background(), *sender, &tokenAddress, nil, 100)
 		if err != nil {
 			return nil, err
 		}
-		args := []interface{}{
-			c.configHex,
-			coins,
-			strconv.Itoa(rpa.CreateParams.Count),
-			amountTotalStr,
+		var pickedCoins *types.PickedCoins
+		var pickedGasCoins *types.PickedCoins
+		if tokenAddress == suiCoinAddress {
+			pickedCoins = nil
+			pickedGasCoins, err = types.PickupCoins(coins, *big.NewInt(0).SetUint64(amountTotal), sui.MaxGasForPay, 100, 0)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			pickedCoins, err = types.PickupCoins(coins, *big.NewInt(0).SetUint64(amountTotal), 0, 100, 0)
+			if err != nil {
+				return nil, err
+			}
+			pickedGasCoins, err = c.chain.PickGasCoins(*sender, sui.MaxGasForPay)
+			if err != nil {
+				return nil, err
+			}
 		}
-		return c.chain.BaseMoveCall(
-			account.Address(),
-			c.packageIdHex.String(),
-			suiPackage,
-			"create",
-			[]string{rpa.CreateParams.TokenAddress},
-			args, 0)
+
+		maxGasBudget := base.Min(pickedGasCoins.SuggestMaxGasBudget(), sui.MaxGasForPay)
+		gasPrice, _ := c.chain.CachedGasPrice()
+
+		return c.chain.EstimateTransactionFeeAndRebuildTransactionBCS(maxGasBudget, func(gasBudget uint64) (*sui.Transaction, error) {
+			ptb := sui_types.NewProgrammableTransactionBuilder()
+			var arg0, arg1, arg2, arg3 sui_types.Argument
+			amtArg, err := ptb.Pure(amountTotal)
+			if err != nil {
+				return nil, err
+			}
+			if tokenAddress == suiCoinAddress {
+				arg := ptb.Command(
+					sui_types.Command{
+						SplitCoins: &struct {
+							Argument  sui_types.Argument
+							Arguments []sui_types.Argument
+						}{
+							Argument:  sui_types.Argument{GasCoin: &lib.EmptyEnum{}},
+							Arguments: []sui_types.Argument{amtArg},
+						},
+					},
+				)
+				arg1 = ptb.Command(
+					sui_types.Command{
+						MakeMoveVec: &struct {
+							TypeTag   *move_types.TypeTag `bcs:"optional"`
+							Arguments []sui_types.Argument
+						}{TypeTag: nil, Arguments: []sui_types.Argument{arg}},
+					},
+				)
+			} else {
+				coinArgs := make([]sui_types.ObjectArg, len(pickedCoins.Coins))
+				for idx, coin := range pickedCoins.Coins {
+					coinArgs[idx] = sui_types.ObjectArg{
+						ImmOrOwnedObject: coin.Reference(),
+					}
+				}
+				arg1, err = ptb.MakeObjList(coinArgs)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			arg0, err = ptb.Obj(configCallArg)
+			if err != nil {
+				return nil, err
+			}
+			arg2, err = ptb.Pure(uint64(rpa.CreateParams.Count))
+			if err != nil {
+				return nil, err
+			}
+			arg3 = amtArg
+
+			ptb.Command(
+				sui_types.Command{
+					MoveCall: &sui_types.ProgrammableMoveCall{
+						Package:  c.packageIdHex,
+						Module:   move_types.Identifier(suiPackage),
+						Function: move_types.Identifier("create"),
+						TypeArguments: []move_types.TypeTag{
+							{Struct: &typeTag},
+						},
+						Arguments: []sui_types.Argument{
+							arg0, arg1, arg2, arg3,
+						},
+					},
+				},
+			)
+			pt := ptb.Finish()
+			tx := sui_types.NewProgrammable(*sender, pickedGasCoins.CoinRefs(), pt, gasBudget, gasPrice)
+			txBytes, err := bcs.Marshal(tx)
+			if err != nil {
+				return nil, err
+			}
+			return &sui.Transaction{TxnBytes: txBytes}, nil
+		})
 	case RPAMethodOpen:
 		if len(rpa.OpenParams.PacketObjectId) == 0 {
 			return nil, errors.New("invalid redPacketObjectId")
 		}
-		redPacketObjectId, err := types.NewHexData(rpa.OpenParams.PacketObjectId)
+		redPacketObjectId, err := lib.NewHexData(rpa.OpenParams.PacketObjectId)
 		if err != nil {
 			return nil, err
 		}
-		addresses := make([]*types.HexData, len(rpa.OpenParams.Addresses))
+		addresses := make([]*lib.HexData, len(rpa.OpenParams.Addresses))
 		for i := range rpa.OpenParams.Addresses {
-			addresses[i], err = types.NewHexData(rpa.OpenParams.Addresses[i])
+			addresses[i], err = lib.NewHexData(rpa.OpenParams.Addresses[i])
 			if err != nil {
 				return nil, err
 			}
@@ -130,7 +245,7 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 		if len(rpa.CloseParams.PacketObjectId) == 0 {
 			return nil, errors.New("invalid redPacketObjectId")
 		}
-		packetId, err := types.NewHexData(rpa.CloseParams.PacketObjectId)
+		packetId, err := lib.NewHexData(rpa.CloseParams.PacketObjectId)
 		if err != nil {
 			return nil, err
 		}
@@ -151,25 +266,6 @@ func (c *suiRedPacketContract) createTx(account base.Account, rpa *RedPacketActi
 	}
 }
 
-func (c *suiRedPacketContract) pickCoinsAndGas(cli *client.Client, account base.Account, token, amount string, firstTry bool) ([]types.ObjectId, *types.ObjectId, error) {
-	ctx := context.Background()
-	addressHex, _ := types.NewHexData(account.Address())
-	amountInt, ok := big.NewInt(0).SetString(amount, 10)
-	if !ok {
-		return nil, nil, errors.New("amount is not a number")
-	}
-	allCoinsStruct, err := cli.GetCoins(ctx, *addressHex, &token, nil, 100)
-	if err != nil {
-		return nil, nil, err
-	}
-	pickedCoins, err := types.PickupCoins(allCoinsStruct, *amountInt, 100, sui.MinGasBudget)
-	if err != nil {
-		return nil, nil, err
-	}
-	// gasCoin return nil, node will pick one from the signer's possession if not provided
-	return pickedCoins.CoinIds(), nil, nil
-}
-
 func (c *suiRedPacketContract) FetchRedPacketCreationDetail(hash string) (detail *RedPacketDetail, err error) {
 	defer base.CatchPanicAndMapToBasicError(&err)
 
@@ -177,7 +273,11 @@ func (c *suiRedPacketContract) FetchRedPacketCreationDetail(hash string) (detail
 	if err != nil {
 		return nil, err
 	}
-	resp, err := cli.GetTransactionBlock(context.Background(), hash, types.SuiTransactionBlockResponseOptions{
+	digest, err := sui_types.NewDigest(hash)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := cli.GetTransactionBlock(context.Background(), *digest, types.SuiTransactionBlockResponseOptions{
 		ShowInput:   true,
 		ShowEffects: true,
 		ShowEvents:  true,

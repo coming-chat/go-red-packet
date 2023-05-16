@@ -29,6 +29,19 @@ type RedPacketAction struct {
 	CloseParams  *RedPacketCloseParams
 }
 
+func (a *RedPacketAction) TokenAddress() string {
+	switch a.Method {
+	case RPAMethodCreate:
+		return a.CreateParams.TokenAddress
+	case RPAMethodOpen:
+		return a.OpenParams.TokenAddress
+	case RPAMethodClose:
+		return a.CloseParams.TokenAddress
+	default:
+		return ""
+	}
+}
+
 type RedPacketCreateParams struct {
 	TokenAddress string // erc20 tokenAddress, aptos coin type
 	Count        int
