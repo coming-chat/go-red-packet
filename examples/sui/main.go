@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 
 	"github.com/coming-chat/go-red-packet/redpacket"
@@ -56,11 +57,24 @@ func main() {
 	// if err != nil {
 	// 	panic(err)
 	// }
-	txHash := "2PAQAgx395T3P3aDpTme5CyySJPDjwMaABUreuQphC1k"
+	// txHash := "CHJzqLkty6YhqHHWGayw98U1nhkBqhZeKKzjCeY47Fa4"
+
+	// new tx
+	// GqAvEJCpT2G4a7KCMyZMuVTgBXwKfeDRiVP8LCxD9bg1
+	txHash := "GqAvEJCpT2G4a7KCMyZMuVTgBXwKfeDRiVP8LCxD9bg1"
 	println(txHash)
 	txDetail, err := contract.FetchRedPacketCreationDetail(txHash)
 	if err != nil {
 		panic(err)
 	}
+	detailByte, err := json.Marshal(txDetail)
+	if err != nil {
+		return
+	}
+	println(string(detailByte))
+	if err != nil {
+		panic(err)
+	}
+
 	println(txDetail.Status)
 }

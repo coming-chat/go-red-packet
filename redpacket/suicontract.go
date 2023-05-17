@@ -372,30 +372,41 @@ func toSuiBaseTransaction(hash string, resp *types.SuiTransactionBlockResponse) 
 		return coinType, nil, errors.New("not programmable transaction")
 	}
 
-	inputs := programmableTransaction.Inputs
-	if len(inputs) < 4 {
-		return coinType, nil, errors.New("invalid input args")
-	}
-
-	// inputs coins 如果是多个，则 inputs 数量比实际参数数量多
-	// amount 参数位置在最后一个，需要从最后一个取
-	inputCoinAmount := inputs[len(inputs)-1].(map[string]interface{})["value"].(string)
-
+	var inputCoinAmount string
 	var toAddress string
 	for _, command := range programmableTransaction.Commands {
 		moveCallCommand := command.(map[string]interface{})
 		if moveCallData, ok := moveCallCommand["MoveCall"]; ok {
 			moveCallMap := moveCallData.(map[string]interface{})
+			if moveCallMap["module"] != "red_packet" || moveCallMap["function"] != "create" {
+				continue
+			}
 			toAddress = moveCallMap["package"].(string)
 			typeArgs := moveCallMap["type_arguments"].([]interface{})
 			if len(typeArgs) == 0 {
 				return coinType, nil, errors.New("invalid type args")
 			}
 			coinType = typeArgs[0].(string)
+
+			args := moveCallMap["arguments"].([]interface{})
+			if len(args) < 4 {
+				return coinType, nil, errors.New("invalid move call args")
+			}
+			inputCoinArg := args[len(args)-1].(map[string]interface{})
+			inputIndex := int(inputCoinArg["Input"].(float64))
+
+			if len(programmableTransaction.Inputs) <= inputIndex {
+				return coinType, nil, errors.New("invalid input args")
+			}
+
+			inputCoinAmount = programmableTransaction.Inputs[inputIndex].(map[string]interface{})["value"].(string)
 		}
 	}
 	if toAddress == "" {
 		return coinType, nil, errors.New("invalid to package address")
+	}
+	if inputCoinAmount == "" {
+		return coinType, nil, errors.New("not found input coin amount")
 	}
 
 	gasUsed := resp.Effects.Data.V1.GasUsed
